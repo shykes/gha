@@ -1,10 +1,25 @@
 package main
 
+import (
+	"dagger/dagger-2-gha/internal/dagger"
+	"encoding/json"
+)
+
 type Workflow struct {
 	Name string            `json:"name,omitempty" yaml:"name,omitempty"`
 	On   WorkflowTriggers  `json:"on" yaml:"on"`
 	Jobs map[string]Job    `json:"jobs" yaml:"jobs"`
 	Env  map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+}
+
+func (w Workflow) Config(filename string) *dagger.Directory {
+	contents, err := json.MarshalIndent(w, "", " ")
+	if err != nil {
+		panic(err)
+	}
+	return dag.
+		Directory().
+		WithNewFile(".github/workflows/"+filename, string(contents))
 }
 
 type WorkflowTriggers struct {
