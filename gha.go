@@ -1,27 +1,10 @@
 package main
 
-import (
-	"dagger/dagger-2-gha/internal/dagger"
-	"encoding/json"
-)
-
 type Workflow struct {
 	Name string            `json:"name,omitempty" yaml:"name,omitempty"`
 	On   WorkflowTriggers  `json:"on" yaml:"on"`
 	Jobs map[string]Job    `json:"jobs" yaml:"jobs"`
 	Env  map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
-}
-
-func (w Workflow) File() *dagger.File {
-	contents, err := json.MarshalIndent(w, "", " ")
-	if err != nil {
-		panic(err)
-	}
-	var filename = w.Name + ".yml"
-	return dag.
-		Directory().
-		WithNewFile(filename, string(contents)).
-		File(filename)
 }
 
 type WorkflowTriggers struct {
@@ -62,14 +45,14 @@ type DispatchInput struct {
 type Job struct {
 	RunsOn         string            `json:"runs-on" yaml:"runs-on"`
 	Needs          []string          `json:"needs,omitempty" yaml:"needs,omitempty"`
-	Steps          []Step            `json:"steps" yaml:"steps"`
+	Steps          []JobStep         `json:"steps" yaml:"steps"`
 	Env            map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Strategy       *Strategy         `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 	TimeoutMinutes int               `json:"timeout-minutes,omitempty" yaml:"timeout-minutes,omitempty"`
 	// Other job-specific fields can be added here...
 }
 
-type Step struct {
+type JobStep struct {
 	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Uses           string            `json:"uses,omitempty" yaml:"uses,omitempty"`
 	Run            string            `json:"run,omitempty" yaml:"run,omitempty"`
