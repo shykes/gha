@@ -1,0 +1,1 @@
+{"name":"hello --greeting=bonjour --name=monde","on":{"pull_request":{"branches":["main"]}},"jobs":{"main":{"runs-on":"","steps":[{"name":"Call Dagger","uses":"dagger/dagger-for-github@v6","with":{"args":"\"hello\" \"--greeting=bonjour\" \"--name=monde\"","module":"github.com/shykes/hello","version":"latest"}}]}}}
