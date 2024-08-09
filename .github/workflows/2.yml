@@ -1,1 +1,26 @@
-{"name":"hello","on":{"pull_request":{"branches":["main"]}},"jobs":{"main":{"runs-on":"","steps":[{"name":"Call Dagger","uses":"dagger/dagger-for-github@v6","with":{"args":"\"hello\"","module":"github.com/shykes/hello","version":"latest"}}]}}}
+{
+ "name": "hello",
+ "on": {
+  "pull_request": {
+   "branches": [
+    "main"
+   ]
+  }
+ },
+ "jobs": {
+  "main": {
+   "runs-on": "ubuntu-latest",
+   "steps": [
+    {
+     "name": "Call Dagger",
+     "uses": "dagger/dagger-for-github@v6",
+     "with": {
+      "args": "\"hello\"",
+      "module": "github.com/shykes/hello",
+      "version": "latest"
+     }
+    }
+   ]
+  }
+ }
+}

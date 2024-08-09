@@ -105,7 +105,8 @@ func (p *Pipeline) Config() Workflow {
 		},
 		Jobs: map[string]Job{
 			"main": Job{
-				Steps: steps,
+				Steps:  steps,
+				RunsOn: "ubuntu-latest",
 			},
 		},
 	}

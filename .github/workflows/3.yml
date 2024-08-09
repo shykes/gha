@@ -1,1 +1,30 @@
-{"name":"container with-mounted-directory --source=. --path=/src with-workdir --path=/src with-exec --args=ls -l stdout","on":{"pull_request":{"branches":["main"]}},"jobs":{"main":{"runs-on":"","steps":[{"name":"Checkout","uses":"actions/checkout@v4"},{"name":"Call Dagger","uses":"dagger/dagger-for-github@v6","with":{"args":"\"container\" \"with-mounted-directory\" \"--source=.\" \"--path=/src\" \"with-workdir\" \"--path=/src\" \"with-exec\" \"--args=ls\" \"-l\" \"stdout\"","module":"github.com/shykes/wolfi","version":"latest"}}]}}}
+{
+ "name": "container with-mounted-directory --source=. --path=/src with-workdir --path=/src with-exec --args=ls -l stdout",
+ "on": {
+  "pull_request": {
+   "branches": [
+    "main"
+   ]
+  }
+ },
+ "jobs": {
+  "main": {
+   "runs-on": "ubuntu-latest",
+   "steps": [
+    {
+     "name": "Checkout",
+     "uses": "actions/checkout@v4"
+    },
+    {
+     "name": "Call Dagger",
+     "uses": "dagger/dagger-for-github@v6",
+     "with": {
+      "args": "\"container\" \"with-mounted-directory\" \"--source=.\" \"--path=/src\" \"with-workdir\" \"--path=/src\" \"with-exec\" \"--args=ls\" \"-l\" \"stdout\"",
+      "module": "github.com/shykes/wolfi",
+      "version": "latest"
+     }
+    }
+   ]
+  }
+ }
+}
