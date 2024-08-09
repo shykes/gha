@@ -1,35 +1,38 @@
 package main
 
 import (
+	"context"
 	"dagger/dagger-2-gha/examples/go/internal/dagger"
 )
 
 type Go struct{}
 
+func (m *Go) Hello(ctx context.Context, lang string) (string, error) {
+	if lang == "fr" {
+		return dag.Hello().Hello(ctx, dagger.HelloHelloOpts{
+			Greeting: "bonjour",
+			Name:     "monde",
+		})
+	}
+	return dag.Hello().Hello(ctx)
+}
+
+func (m *Go) ContainerStuff(ctx context.Context, source *dagger.Directory) (string, error) {
+	return dag.
+		Wolfi().
+		Container().
+		WithMountedDirectory("/src", source).
+		WithWorkdir("/src").
+		WithExec([]string{"ls", "-l"}).
+		Stdout(ctx)
+}
+
 // Generate a simple workflow configuration
-func (m *Go) Config() *dagger.Directory {
+func (m *Go) Main() *dagger.Directory {
 	return dag.
 		Dagger2Gha().
-		OnPullRequest("hello", dagger.Dagger2GhaOnPullRequestOpts{
-			Module:     "github.com/shykes/hello",
-			NoCheckout: true,
-		}).
-		OnPullRequest("hello", dagger.Dagger2GhaOnPullRequestOpts{
-			Args: []string{
-				"--greeting", "bonjour",
-				"--name", "monde",
-			},
-			Module:     "github.com/shykes/hello",
-			NoCheckout: true,
-		}).
-		OnPullRequest("container", dagger.Dagger2GhaOnPullRequestOpts{
-			Module: "github.com/shykes/daggerverse/wolfi",
-			Args: []string{
-				"with-mounted-directory", "--source=.", "--path=/src",
-				"with-workdir", "--path=/src",
-				"with-exec", "--args=ls,-l",
-				"stdout",
-			},
-		}).
+		WithPipeline("hello-english", "hello --lang=en").
+		WithPipeline("hello-french", "hello --lang=fr").
+		WithPipeline("container-stuff", "container-stuff --source=.").
 		Config()
 }

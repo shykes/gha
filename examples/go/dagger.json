@@ -3,8 +3,16 @@
   "sdk": "go",
   "dependencies": [
     {
+      "name": "wolfi",
+      "source": "github.com/shykes/daggerverse/wolfi@c32c202f5ea58a050779b5d22d68d1e74a2f068e"
+    },
+    {
       "name": "dagger2gha",
       "source": "../../."
+    },
+    {
+      "name": "hello",
+      "source": "github.com/shykes/hello@2d789671a44c4d559be506a9bc4b71b0ba6e23c9"
     }
   ],
   "source": ".",

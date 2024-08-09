@@ -3,9 +3,6 @@ package main
 
 import (
 	"dagger/dagger-2-gha/internal/dagger"
-	"fmt"
-	"strconv"
-	"strings"
 )
 
 func New(
@@ -34,92 +31,72 @@ type Dagger2Gha struct {
 	DaggerVersion string
 }
 
-// Add a Dagger pipeline to be called on pull request to the given branch
-func (m *Dagger2Gha) OnPullRequest(
-	// +optional
-	// +default="main"
-	branch string,
+func (m *Dagger2Gha) WithPipeline(
+	// Name of the Github Action
+	name string,
+	// The Dagger command to execute
+	// Example 'build --source=.'
+	command string,
 	// +optional
 	// +default="."
 	module string,
-	function string,
-	// +optional
-	args []string,
-	// +optional
-	noCheckout bool,
 ) *Dagger2Gha {
 	m.Pipelines = append(m.Pipelines, Pipeline{
-		OnPullRequestBranch: branch,
-		Module:              module,
-		Function:            function,
-		Args:                args,
-		Checkout:            !noCheckout,
-		DaggerVersion:       m.DaggerVersion,
+		DaggerVersion: m.DaggerVersion,
+		PublicToken:   m.PublicToken,
+		Name:          name,
+		Command:       command,
+		Module:        module,
 	})
 	return m
 }
 
+// Generate a github config directory, usable as an overlay on the repository root
 func (m *Dagger2Gha) Config() *dagger.Directory {
 	dir := dag.Directory()
-	for i, pipeline := range m.Pipelines {
-		dir = dir.WithFile(
-			fmt.Sprintf(".github/workflows/%d.yml", i+1),
-			pipeline.Config().File(),
-		)
+	for _, p := range m.Pipelines {
+		dir = dir.WithDirectory(".", p.GithubAction().Config())
 	}
 	return dir
 }
 
 type Pipeline struct {
-	OnPullRequestBranch string
-	Module              string
-	Function            string
-	Args                []string
-	Checkout            bool
-	DaggerVersion       string
+	// +private
+	DaggerVersion string
+	// +private
+	PublicToken string
+	Name        string
+	Module      string
+	Command     string
 }
 
-func (p *Pipeline) Name() string {
-	return strings.Join(append([]string{p.Function}, p.Args...), " ")
-}
-
-func (p *Pipeline) Config() Workflow {
-	var steps []Step
-	if p.Checkout {
-		steps = append(steps, Step{
-			Name: "Checkout",
-			Uses: "actions/checkout@v4",
-		})
+func (p *Pipeline) GithubAction() Action {
+	var env = make(map[string]string)
+	if p.PublicToken != "" {
+		env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
 	}
-	steps = append(steps, Step{
-		Name: "Call Dagger",
-		Uses: "dagger/dagger-for-github@v6",
-		With: map[string]string{
-			"version": "latest",
-			"module":  p.Module,
-			"args":    shellCommand(append([]string{p.Function}, p.Args...)),
-		},
-	})
-	return Workflow{
-		Name: p.Name(),
-		On: WorkflowTriggers{
-			PullRequest: &PullRequestEvent{
-				Branches: []string{p.OnPullRequestBranch},
-			},
-		},
-		Jobs: map[string]Job{
-			"main": Job{
-				Steps:  steps,
-				RunsOn: "ubuntu-latest",
+	action := Action{
+		Name: p.Name,
+		Runs: Runs{
+			Using: "composite",
+			Steps: []CompositeActionStep{
+				CompositeActionStep{
+					Name: "Checkout",
+					Uses: "actions/checkout@v4",
+				},
+				CompositeActionStep{
+					Name: "Dagger",
+					Uses: "dagger/dagger-for-github@v6",
+					With: map[string]string{
+						"version": p.DaggerVersion,
+						"command": p.Command,
+						"module":  p.Module,
+					},
+					Env: env,
+				},
 			},
 		},
 	}
-}
 
-func shellCommand(args []string) string {
-	var escapedArgs []string
-	for _, arg := range args {
-		escapedArgs = append(escapedArgs, strconv.Quote(arg))
-	}
-	return strings.Join(escapedArgs, " ")
+	return action
 }
