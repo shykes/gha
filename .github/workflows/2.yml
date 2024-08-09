@@ -1,5 +1,5 @@
 {
- "name": "hello",
+ "name": "hello --greeting bonjour --name monde",
  "on": {
   "pull_request": {
    "branches": [
@@ -15,7 +15,7 @@
      "name": "Call Dagger",
      "uses": "dagger/dagger-for-github@v6",
      "with": {
-      "args": "\"hello\"",
+      "args": "\"hello\" \"--greeting\" \"bonjour\" \"--name\" \"monde\"",
       "module": "github.com/shykes/hello",
       "version": "latest"
      }

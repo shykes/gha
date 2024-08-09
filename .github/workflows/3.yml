@@ -1,5 +1,5 @@
 {
- "name": "container with-mounted-directory --source=. --path=/src with-workdir --path=/src with-exec --args=ls -l stdout",
+ "name": "container with-mounted-directory --source=. --path=/src with-workdir --path=/src with-exec --args=ls,-l stdout",
  "on": {
   "pull_request": {
    "branches": [
@@ -19,8 +19,8 @@
      "name": "Call Dagger",
      "uses": "dagger/dagger-for-github@v6",
      "with": {
-      "args": "\"container\" \"with-mounted-directory\" \"--source=.\" \"--path=/src\" \"with-workdir\" \"--path=/src\" \"with-exec\" \"--args=ls\" \"-l\" \"stdout\"",
-      "module": "github.com/shykes/wolfi",
+      "args": "\"container\" \"with-mounted-directory\" \"--source=.\" \"--path=/src\" \"with-workdir\" \"--path=/src\" \"with-exec\" \"--args=ls,-l\" \"stdout\"",
+      "module": "github.com/shykes/daggerverse/wolfi",
       "version": "latest"
      }
     }
