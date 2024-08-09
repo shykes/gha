@@ -33,6 +33,7 @@ type Dagger2Gha struct {
 	DaggerVersion string
 }
 
+// Add a Dagger pipeline to be called on pull request to the given branch
 func (m *Dagger2Gha) OnPullRequest(
 	// +default="main"
 	branch string,
