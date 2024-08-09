@@ -1,4 +1,10 @@
 // Generate Github Actions configurations from Dagger pipelines
+//
+// Daggerizing your CI makes your YAML configurations smaller, but they still exist,
+// and they're still a pain to maintain by hand.
+//
+// This module aims to finish the job, by letting you generate your remaining
+// YAML configuration from a Dagger pipeline, written in your favorite language.
 package main
 
 import (
@@ -35,6 +41,7 @@ type Dagger2Gha struct {
 	DaggerVersion string
 }
 
+// Add a trigger to execute a Dagger pipeline on a git push
 func (m *Dagger2Gha) OnPush(
 	// The Dagger command to execute
 	// Example 'build --source=.'
@@ -52,11 +59,12 @@ func (m *Dagger2Gha) OnPush(
 			Branches: branches,
 			Tags:     tags,
 		},
-		Pipeline: m.Pipeline(command, module),
+		Pipeline: m.pipeline(command, module),
 	})
 	return m
 }
 
+// Add a trigger to execute a Dagger pipeline on a pull request
 func (m *Dagger2Gha) OnPullRequest(
 	// The Dagger command to execute
 	// Example 'build --source=.'
@@ -71,12 +79,12 @@ func (m *Dagger2Gha) OnPullRequest(
 		Event: PullRequestEvent{
 			Branches: branches,
 		},
-		Pipeline: m.Pipeline(command, module),
+		Pipeline: m.pipeline(command, module),
 	})
 	return m
 }
 
-func (m *Dagger2Gha) Pipeline(
+func (m *Dagger2Gha) pipeline(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
