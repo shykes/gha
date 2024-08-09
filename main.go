@@ -15,6 +15,7 @@ func New(
 	// +optional
 	publicToken string,
 	// Dagger version to run in the Github Actions pipelines
+	// +optional
 	// +default="latest"
 	daggerVersion string,
 ) *Dagger2Gha {
@@ -34,8 +35,10 @@ type Dagger2Gha struct {
 }
 
 func (m *Dagger2Gha) OnPullRequest(
+	// +optional
 	// +default="main"
 	branch string,
+	// +optional
 	// +default="."
 	module string,
 	function string,
@@ -105,7 +108,8 @@ func (p *Pipeline) Config() Workflow {
 		},
 		Jobs: map[string]Job{
 			"main": Job{
-				Steps: steps,
+				Steps:  steps,
+				RunsOn: "ubuntu-latest",
 			},
 		},
 	}

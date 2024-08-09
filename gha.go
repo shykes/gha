@@ -13,7 +13,7 @@ type Workflow struct {
 }
 
 func (w Workflow) File() *dagger.File {
-	contents, err := json.Marshal(w)
+	contents, err := json.MarshalIndent(w, "", " ")
 	if err != nil {
 		panic(err)
 	}
