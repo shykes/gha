@@ -1,0 +1,5 @@
+{
+  "name": "dagger2gha",
+  "sdk": "go",
+  "engineVersion": "v0.12.4"
+}
