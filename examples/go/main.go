@@ -31,8 +31,12 @@ func (m *Go) ContainerStuff(ctx context.Context, source *dagger.Directory) (stri
 func (m *Go) Main() *dagger.Directory {
 	return dag.
 		Dagger2Gha().
-		WithPipeline("hello-english", "hello --lang=en").
-		WithPipeline("hello-french", "hello --lang=fr").
-		WithPipeline("container-stuff", "container-stuff --source=.").
+		OnPush("hello --name=main", dagger.Dagger2GhaOnPushOpts{
+			Branches: []string{"main"},
+			Module:   "github.com/shykes/hello",
+		}).
+		OnPullRequest("hello --name='pull request'", dagger.Dagger2GhaOnPullRequestOpts{
+			Module: "github.com/shykes/hello",
+		}).
 		Config()
 }
