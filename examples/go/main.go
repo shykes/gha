@@ -40,5 +40,7 @@ func (m *Examples) Dagger2Gha() *dagger.Directory {
 		OnPullRequest("hello --name='pull request'", dagger.Dagger2GhaOnPullRequestOpts{
 			Module: "github.com/shykes/hello",
 		}).
-		Config()
+		Config(dagger.Dagger2GhaConfigOpts{
+			Prefix: "example-",
+		})
 }
