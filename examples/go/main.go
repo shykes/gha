@@ -27,8 +27,10 @@ func (m *Go) ContainerStuff(ctx context.Context, source *dagger.Directory) (stri
 		Stdout(ctx)
 }
 
-// Generate a simple workflow configuration
-func (m *Go) Main() *dagger.Directory {
+// Generate a simple configuration triggered by git push on main, and pull requests
+// 1. Prints "hello, main!" on push to main
+// 2. Prints "hello, pull request!" on new pull request
+func (m *Go) Dagger2Gha_hello() *dagger.Directory {
 	return dag.
 		Dagger2Gha().
 		OnPush("hello --name=main", dagger.Dagger2GhaOnPushOpts{
