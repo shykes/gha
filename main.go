@@ -8,6 +8,7 @@
 package main
 
 import (
+	"context"
 	"dagger/dagger-2-gha/internal/dagger"
 	"fmt"
 	"strings"
@@ -26,11 +27,15 @@ func New(
 	// +optional
 	// +default="latest"
 	daggerVersion string,
+	// Explicitly stop the Dagger Engine after completing the pipeline
+	// +optional
+	stopEngine bool,
 ) *Dagger2Gha {
 	return &Dagger2Gha{
 		PublicToken:   publicToken,
 		NoTraces:      noTraces,
 		DaggerVersion: daggerVersion,
+		StopEngine:    stopEngine,
 	}
 }
 
@@ -45,6 +50,8 @@ type Dagger2Gha struct {
 	DaggerVersion string
 	// +private
 	NoTraces bool
+	// +private
+	StopEngine bool
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
@@ -102,20 +109,25 @@ func (m *Dagger2Gha) pipeline(
 		DaggerVersion: m.DaggerVersion,
 		PublicToken:   m.PublicToken,
 		NoTraces:      m.NoTraces,
+		StopEngine:    m.StopEngine,
 		Command:       command,
 		Module:        module,
 	}
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
-func (m *Dagger2Gha) Config() *dagger.Directory {
+func (m *Dagger2Gha) Config(
+	// Prefix to use for generated workflow filenames
+	// +optional
+	prefix string,
+) *dagger.Directory {
 	dir := dag.Directory()
 	for i, t := range m.PushTriggers {
-		filename := fmt.Sprintf("push-%d.yml", i+1)
+		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
 		dir = dir.WithDirectory(".", t.Config(filename))
 	}
 	for i, t := range m.PullRequestTriggers {
-		filename := fmt.Sprintf("pr-%d.yml", i+1)
+		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
 		dir = dir.WithDirectory(".", t.Config(filename))
 	}
 	return dir
@@ -162,6 +174,8 @@ type Pipeline struct {
 	Command string
 	// +private
 	NoTraces bool
+	// +private
+	StopEngine bool
 }
 
 func (p *Pipeline) Name() string {
@@ -171,7 +185,7 @@ func (p *Pipeline) Name() string {
 // Generate a GHA workflow from a Dagger pipeline definition.
 // The workflow will have no triggers, they should be filled separately.
 func (p *Pipeline) asWorkflow() Workflow {
-	return Workflow{
+	workflow := Workflow{
 		Name: p.Command,
 		On:   WorkflowTriggers{}, // Triggers intentionally left blank
 		Jobs: map[string]Job{
@@ -179,11 +193,13 @@ func (p *Pipeline) asWorkflow() Workflow {
 				RunsOn: "ubuntu-latest",
 				Steps: []JobStep{
 					p.checkoutStep(),
+					p.installDaggerStep(),
 					p.callDaggerStep(),
 				},
 			},
 		},
 	}
+	return workflow
 }
 
 func (p *Pipeline) checkoutStep() JobStep {
@@ -193,53 +209,53 @@ func (p *Pipeline) checkoutStep() JobStep {
 	}
 }
 
+func (p *Pipeline) installDaggerStep() JobStep {
+	return p.bashStep("scripts/install-dagger.sh", map[string]string{
+		"DAGGER_VERSION": p.DaggerVersion,
+	})
+}
+
 func (p *Pipeline) callDaggerStep() JobStep {
 	step := JobStep{
-		Name: "Call Dagger",
-		Uses: "dagger/dagger-for-github@v6",
-		With: map[string]string{
-			"version": "latest",
-			"module":  p.Module,
-			"args":    p.Command,
-		},
+		Name:  "dagger call",
+		Shell: "bash",
+		Run:   "dagger call " + p.Command,
+		Env:   map[string]string{},
+	}
+	if p.Module != "" {
+		step.Env["DAGGER_MODULE"] = p.Module
 	}
 	if !p.NoTraces {
 		if p.PublicToken != "" {
-			step.With["cloud-token"] = p.PublicToken
+			step.Env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
 		} else {
-			step.With["cloud-token"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
+			step.Env["DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 		}
 	}
 	return step
 }
 
-func (p *Pipeline) githubAction() Action {
-	var env = make(map[string]string)
-	if p.PublicToken != "" {
-		env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
-	}
-	action := Action{
-		Name: p.Name(),
-		Runs: Runs{
-			Using: "composite",
-			Steps: []CompositeActionStep{
-				CompositeActionStep{
-					Name: "Checkout",
-					Uses: "actions/checkout@v4",
-				},
-				CompositeActionStep{
-					Name: "Dagger",
-					Uses: "dagger/dagger-for-github@v6",
-					With: map[string]string{
-						"version": p.DaggerVersion,
-						"command": p.Command,
-						"module":  p.Module,
-					},
-					Env: env,
-				},
-			},
-		},
-	}
+func (p *Pipeline) stopEngineStep() JobStep {
+	return p.bashStep("scripts/stop-engine.sh", nil)
+}
 
-	return action
+// Return a github actions step which executes the script embedded at <filename>.
+// The script must be checked in with the module source code.
+func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
+	script, err := dag.
+		CurrentModule().
+		Source().
+		File(filename).
+		Contents(context.Background())
+	if err != nil {
+		// We skip error checking for simplicity
+		// (don't want to plumb error checking everywhere)
+		panic(err)
+	}
+	return JobStep{
+		Name:  filename,
+		Shell: "bash",
+		Run:   script,
+		Env:   env,
+	}
 }
