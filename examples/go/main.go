@@ -5,9 +5,9 @@ import (
 	"dagger/dagger-2-gha/examples/go/internal/dagger"
 )
 
-type Go struct{}
+type Examples struct{}
 
-func (m *Go) Hello(ctx context.Context, lang string) (string, error) {
+func (m *Examples) Hello(ctx context.Context, lang string) (string, error) {
 	if lang == "fr" {
 		return dag.Hello().Hello(ctx, dagger.HelloHelloOpts{
 			Greeting: "bonjour",
@@ -17,7 +17,7 @@ func (m *Go) Hello(ctx context.Context, lang string) (string, error) {
 	return dag.Hello().Hello(ctx)
 }
 
-func (m *Go) ContainerStuff(ctx context.Context, source *dagger.Directory) (string, error) {
+func (m *Examples) ContainerStuff(ctx context.Context, source *dagger.Directory) (string, error) {
 	return dag.
 		Wolfi().
 		Container().
@@ -30,7 +30,7 @@ func (m *Go) ContainerStuff(ctx context.Context, source *dagger.Directory) (stri
 // Generate a simple configuration triggered by git push on main, and pull requests
 // 1. Prints "hello, main!" on push to main
 // 2. Prints "hello, pull request!" on new pull request
-func (m *Go) Dagger2Gha_hello() *dagger.Directory {
+func (m *Examples) Dagger2Gha() *dagger.Directory {
 	return dag.
 		Dagger2Gha().
 		OnPush("hello --name=main", dagger.Dagger2GhaOnPushOpts{
