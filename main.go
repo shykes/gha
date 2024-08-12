@@ -14,6 +14,9 @@ import (
 )
 
 func New(
+	// Disable sending traces to Dagger Cloud
+	// +optional
+	noTraces bool,
 	// Public Dagger Cloud token, for open-source projects. DO NOT PASS YOUR PRIVATE DAGGER CLOUD TOKEN!
 	// This is for a special "public" token which can safely be shared publicly.
 	// To get one, contact support@dagger.io
@@ -26,6 +29,7 @@ func New(
 ) *Dagger2Gha {
 	return &Dagger2Gha{
 		PublicToken:   publicToken,
+		NoTraces:      noTraces,
 		DaggerVersion: daggerVersion,
 	}
 }
@@ -39,6 +43,8 @@ type Dagger2Gha struct {
 	PublicToken string
 	// +private
 	DaggerVersion string
+	// +private
+	NoTraces bool
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
@@ -95,6 +101,7 @@ func (m *Dagger2Gha) pipeline(
 	return Pipeline{
 		DaggerVersion: m.DaggerVersion,
 		PublicToken:   m.PublicToken,
+		NoTraces:      m.NoTraces,
 		Command:       command,
 		Module:        module,
 	}
@@ -149,14 +156,20 @@ type Pipeline struct {
 	DaggerVersion string
 	// +private
 	PublicToken string
-	Module      string
-	Command     string
+	// +private
+	Module string
+	// +private
+	Command string
+	// +private
+	NoTraces bool
 }
 
 func (p *Pipeline) Name() string {
 	return strings.SplitN(p.Command, " ", 2)[0]
 }
 
+// Generate a GHA workflow from a Dagger pipeline definition.
+// The workflow will have no triggers, they should be filled separately.
 func (p *Pipeline) asWorkflow() Workflow {
 	return Workflow{
 		Name: p.Command,
@@ -165,24 +178,39 @@ func (p *Pipeline) asWorkflow() Workflow {
 			"dagger": Job{
 				RunsOn: "ubuntu-latest",
 				Steps: []JobStep{
-					JobStep{
-						Name: "Checkout",
-						Uses: "actions/checkout@v4",
-					},
-					JobStep{
-						Name: "Call Dagger",
-						Uses: "dagger/dagger-for-github@v6",
-						With: map[string]string{
-							"version":     "latest",
-							"module":      p.Module,
-							"args":        p.Command,
-							"cloud-token": p.PublicToken,
-						},
-					},
+					p.checkoutStep(),
+					p.callDaggerStep(),
 				},
 			},
 		},
 	}
+}
+
+func (p *Pipeline) checkoutStep() JobStep {
+	return JobStep{
+		Name: "Checkout",
+		Uses: "actions/checkout@v4",
+	}
+}
+
+func (p *Pipeline) callDaggerStep() JobStep {
+	step := JobStep{
+		Name: "Call Dagger",
+		Uses: "dagger/dagger-for-github@v6",
+		With: map[string]string{
+			"version": "latest",
+			"module":  p.Module,
+			"args":    p.Command,
+		},
+	}
+	if !p.NoTraces {
+		if p.PublicToken != "" {
+			step.With["cloud-token"] = p.PublicToken
+		} else {
+			step.With["cloud-token"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
+		}
+	}
+	return step
 }
 
 func (p *Pipeline) githubAction() Action {
