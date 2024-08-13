@@ -1,4 +1,4 @@
-// Generate Github Actions configurations from Dagger pipelines
+// Manage Github Actions configurations with Dagger
 //
 // Daggerizing your CI makes your YAML configurations smaller, but they still exist,
 // and they're still a pain to maintain by hand.
@@ -9,11 +9,12 @@ package main
 
 import (
 	"context"
-	"dagger/dagger-2-gha/internal/dagger"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/shykes/gha/internal/dagger"
 )
 
 func New(
@@ -40,8 +41,8 @@ func New(
 	// +optional
 	// +default="ubuntu-latest"
 	runner string,
-) *Dagger2Gha {
-	return &Dagger2Gha{
+) *Gha {
+	return &Gha{
 		PublicToken:   publicToken,
 		NoTraces:      noTraces,
 		DaggerVersion: daggerVersion,
@@ -51,7 +52,7 @@ func New(
 	}
 }
 
-type Dagger2Gha struct {
+type Gha struct {
 	// +private
 	PushTriggers []PushTrigger
 	// +private
@@ -73,7 +74,7 @@ type Dagger2Gha struct {
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
-func (m *Dagger2Gha) OnPush(
+func (m *Gha) OnPush(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -98,7 +99,7 @@ func (m *Dagger2Gha) OnPush(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
-) *Dagger2Gha {
+) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
 	}
@@ -114,7 +115,7 @@ func (m *Dagger2Gha) OnPush(
 }
 
 // Add a trigger to execute a Dagger pipeline on a pull request
-func (m *Dagger2Gha) OnPullRequest(
+func (m *Gha) OnPullRequest(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -137,7 +138,7 @@ func (m *Dagger2Gha) OnPullRequest(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
-) *Dagger2Gha {
+) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
 	}
@@ -152,7 +153,7 @@ func (m *Dagger2Gha) OnPullRequest(
 }
 
 // Add a trigger to execute a Dagger pipeline on a workflow dispatch event
-func (m *Dagger2Gha) OnDispatch(
+func (m *Gha) OnDispatch(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -168,7 +169,7 @@ func (m *Dagger2Gha) OnDispatch(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
-) *Dagger2Gha {
+) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
 	}
@@ -181,7 +182,7 @@ func (m *Dagger2Gha) OnDispatch(
 	return m
 }
 
-func (m *Dagger2Gha) pipeline(
+func (m *Gha) pipeline(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -229,7 +230,7 @@ type Pipeline struct {
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
-func (m *Dagger2Gha) Config(
+func (m *Gha) Config(
 	// Prefix to use for generated workflow filenames
 	// +optional
 	prefix string,

@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"dagger/dagger-2-gha/examples/go/internal/dagger"
+
+	"github.com/shykes/gha/examples/go/internal/dagger"
 )
 
 type Examples struct{}
@@ -30,30 +31,30 @@ func (m *Examples) ContainerStuff(ctx context.Context, source *dagger.Directory)
 // Generate a simple configuration triggered by git push on main, and pull requests
 // 1. Prints "hello, main!" on push to main
 // 2. Prints "hello, pull request!" on new pull request
-func (m *Examples) Dagger2Gha() *dagger.Directory {
+func (m *Examples) Gha() *dagger.Directory {
 	return dag.
-		Dagger2Gha().
-		OnPush("hello --name=main", dagger.Dagger2GhaOnPushOpts{
+		Gha().
+		OnPush("hello --name=main", dagger.GhaOnPushOpts{
 			Branches: []string{"main"},
 			Module:   "github.com/shykes/hello",
 		}).
-		OnPullRequest("hello --name='pull request'", dagger.Dagger2GhaOnPullRequestOpts{
+		OnPullRequest("hello --name='pull request'", dagger.GhaOnPullRequestOpts{
 			Module: "github.com/shykes/hello",
 		}).
-		Config(dagger.Dagger2GhaConfigOpts{
+		Config(dagger.GhaConfigOpts{
 			Prefix: "example-",
 		})
 }
 
 // Generate a configuration with a "dispatch" workflow,
 // that can be triggered manually, independently of any platform event.
-func (m *Examples) Dagger2Gha_OnDispatch() *dagger.Directory {
+func (m *Examples) Gha_OnDispatch() *dagger.Directory {
 	return dag.
-		Dagger2Gha().
-		OnDispatch("deploy-docs", dagger.Dagger2GhaOnDispatchOpts{
+		Gha().
+		OnDispatch("deploy-docs", dagger.GhaOnDispatchOpts{
 			Secrets: []string{"DOCS_SERVER_PASSWORD"},
 		}).
-		Config(dagger.Dagger2GhaConfigOpts{
+		Config(dagger.GhaConfigOpts{
 			Prefix: "example-",
 		})
 }

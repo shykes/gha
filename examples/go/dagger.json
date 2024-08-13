@@ -3,7 +3,7 @@
   "sdk": "go",
   "dependencies": [
     {
-      "name": "dagger2gha",
+      "name": "gha",
       "source": "../../."
     },
     {

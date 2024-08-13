@@ -1,4 +1,4 @@
-# This file was generated. See https://daggerverse.dev/mod/github.com/shykes/dagger2gha
+# This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
 name: hello --name=main
 "on":
     push:

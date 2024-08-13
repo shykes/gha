@@ -1,4 +1,4 @@
-module github.com/shykes/gha
+module github.com/shykes/gha/examples/go
 
 go 1.22.5
 
@@ -37,5 +37,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240520151616-dc85e6b867a5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1
 )

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"dagger/dagger-2-gha/internal/dagger"
 	"encoding/json"
 	"path"
+
+	"github.com/shykes/gha/internal/dagger"
 )
 
 // Action represents the top-level structure of a GitHub Actions action YAML file.

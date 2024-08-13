@@ -1,5 +1,5 @@
 {
-  "name": "dagger2gha",
+  "name": "gha",
   "sdk": "go",
   "source": ".",
   "engineVersion": "v0.12.4"

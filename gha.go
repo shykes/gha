@@ -1,14 +1,14 @@
 package main
 
 import (
-	"dagger/dagger-2-gha/internal/dagger"
 	"encoding/json"
 
+	"github.com/shykes/gha/internal/dagger"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	genHeader = "# This file was generated. See https://daggerverse.dev/mod/github.com/shykes/dagger2gha"
+	genHeader = "# This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha"
 )
 
 type Workflow struct {
