@@ -10,7 +10,9 @@ package main
 import (
 	"context"
 	"dagger/dagger-2-gha/internal/dagger"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -79,6 +81,11 @@ func (m *Dagger2Gha) OnPush(
 	// +optional
 	// +default="."
 	module string,
+	// Github secrets to inject into the pipeline environment.
+	// For each secret, an env variable with the same name is created.
+	// Example: ["PROD_DEPLOY_TOKEN", "PRIVATE_SSH_KEY"]
+	// +optional
+	secrets []string,
 	// Run only on push to specific branches
 	// +optional
 	branches []string,
@@ -92,13 +99,16 @@ func (m *Dagger2Gha) OnPush(
 	// +optional
 	runner string,
 ) *Dagger2Gha {
+	if err := validateSecretNames(secrets); err != nil {
+		panic(err) // FIXME
+	}
 	m.PushTriggers = append(m.PushTriggers, PushTrigger{
 		Event: PushEvent{
 			Branches: branches,
 			Tags:     tags,
 			Paths:    paths,
 		},
-		Pipeline: m.pipeline(command, module, runner),
+		Pipeline: m.pipeline(command, module, runner, secrets),
 	})
 	return m
 }
@@ -112,6 +122,11 @@ func (m *Dagger2Gha) OnPullRequest(
 	// +optional
 	// +default="."
 	module string,
+	// Github secrets to inject into the pipeline environment.
+	// For each secret, an env variable with the same name is created.
+	// Example: ["PROD_DEPLOY_TOKEN", "PRIVATE_SSH_KEY"]
+	// +optional
+	secrets []string,
 	// +optional
 	// Run only for pull requests that target specific branches
 	branches []string,
@@ -123,12 +138,15 @@ func (m *Dagger2Gha) OnPullRequest(
 	// +optional
 	runner string,
 ) *Dagger2Gha {
+	if err := validateSecretNames(secrets); err != nil {
+		panic(err) // FIXME
+	}
 	m.PullRequestTriggers = append(m.PullRequestTriggers, PullRequestTrigger{
 		Event: PullRequestEvent{
 			Branches: branches,
 			Types:    types,
 		},
-		Pipeline: m.pipeline(command, module, runner),
+		Pipeline: m.pipeline(command, module, runner, secrets),
 	})
 	return m
 }
@@ -142,12 +160,20 @@ func (m *Dagger2Gha) OnDispatch(
 	// +optional
 	// +default="."
 	module string,
+	// Github secrets to inject into the pipeline environment.
+	// For each secret, an env variable with the same name is created.
+	// Example: ["PROD_DEPLOY_TOKEN", "PRIVATE_SSH_KEY"]
+	// +optional
+	secrets []string,
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
 ) *Dagger2Gha {
+	if err := validateSecretNames(secrets); err != nil {
+		panic(err) // FIXME
+	}
 	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
-		Pipeline: m.pipeline(command, module, runner),
+		Pipeline: m.pipeline(command, module, runner, secrets),
 		Event: WorkflowDispatchEvent{
 			Inputs: nil, // FIXME: add inputs, could be pretty dope
 		},
@@ -161,6 +187,7 @@ func (m *Dagger2Gha) pipeline(
 	command string,
 	module string,
 	runner string,
+	secrets []string,
 ) Pipeline {
 	p := Pipeline{
 		DaggerVersion: m.DaggerVersion,
@@ -171,6 +198,7 @@ func (m *Dagger2Gha) pipeline(
 		Runner:        m.Runner,
 		Command:       command,
 		Module:        module,
+		Secrets:       secrets,
 	}
 	if runner != "" {
 		p.Runner = runner
@@ -196,6 +224,8 @@ type Pipeline struct {
 	AsJson bool
 	// +private
 	Runner string
+	// +private
+	Secrets []string
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
@@ -314,6 +344,9 @@ func (p *Pipeline) callDaggerStep() JobStep {
 	if p.Module != "" {
 		step.Env["DAGGER_MODULE"] = p.Module
 	}
+	for _, secretName := range p.Secrets {
+		step.Env[secretName] = fmt.Sprintf("${{ secrets.%s }}", secretName)
+	}
 	if !p.NoTraces {
 		if p.PublicToken != "" {
 			step.Env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
@@ -351,4 +384,15 @@ func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
 		Run:   script,
 		Env:   env,
 	}
+}
+
+// check if the secret name contains only alphanumeric characters and underscores.
+func validateSecretNames(secrets []string) error {
+	validName := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	for _, secretName := range secrets {
+		if !validName.MatchString(secretName) {
+			return errors.New("invalid secret name: '" + secretName + "' must contain only alphanumeric characters and underscores")
+		}
+	}
+	return nil
 }

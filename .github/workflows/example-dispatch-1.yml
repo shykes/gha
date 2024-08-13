@@ -40,4 +40,5 @@ jobs:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: .
+                DOCS_SERVER_PASSWORD: ${{ secrets.DOCS_SERVER_PASSWORD }}
               shell: bash

@@ -50,7 +50,9 @@ func (m *Examples) Dagger2Gha() *dagger.Directory {
 func (m *Examples) Dagger2Gha_OnDispatch() *dagger.Directory {
 	return dag.
 		Dagger2Gha().
-		OnDispatch("deploy-docs").
+		OnDispatch("deploy-docs", dagger.Dagger2GhaOnDispatchOpts{
+			Secrets: []string{"DOCS_SERVER_PASSWORD"},
+		}).
 		Config(dagger.Dagger2GhaConfigOpts{
 			Prefix: "example-",
 		})
