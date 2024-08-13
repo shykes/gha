@@ -33,6 +33,11 @@ func New(
 	// Encode all files as JSON (which is also valid YAML)
 	// +optional
 	asJson bool,
+	// Configure a default runner for all workflows
+	// See https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/using-self-hosted-runners-in-a-workflow
+	// +optional
+	// +default="ubuntu-latest"
+	runner string,
 ) *Dagger2Gha {
 	return &Dagger2Gha{
 		PublicToken:   publicToken,
@@ -40,6 +45,7 @@ func New(
 		DaggerVersion: daggerVersion,
 		StopEngine:    stopEngine,
 		AsJson:        asJson,
+		Runner:        runner,
 	}
 }
 
@@ -60,6 +66,8 @@ type Dagger2Gha struct {
 	StopEngine bool
 	// +private
 	AsJson bool
+	// +private
+	Runner string
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
@@ -80,6 +88,9 @@ func (m *Dagger2Gha) OnPush(
 	// Run only on push to specific paths
 	// +optional
 	paths []string,
+	// Dispatch jobs to the given runner
+	// +optional
+	runner string,
 ) *Dagger2Gha {
 	m.PushTriggers = append(m.PushTriggers, PushTrigger{
 		Event: PushEvent{
@@ -87,7 +98,7 @@ func (m *Dagger2Gha) OnPush(
 			Tags:     tags,
 			Paths:    paths,
 		},
-		Pipeline: m.pipeline(command, module),
+		Pipeline: m.pipeline(command, module, runner),
 	})
 	return m
 }
@@ -108,13 +119,16 @@ func (m *Dagger2Gha) OnPullRequest(
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
 	// +optional
 	types []string,
+	// Dispatch jobs to the given runner
+	// +optional
+	runner string,
 ) *Dagger2Gha {
 	m.PullRequestTriggers = append(m.PullRequestTriggers, PullRequestTrigger{
 		Event: PullRequestEvent{
 			Branches: branches,
 			Types:    types,
 		},
-		Pipeline: m.pipeline(command, module),
+		Pipeline: m.pipeline(command, module, runner),
 	})
 	return m
 }
@@ -128,9 +142,12 @@ func (m *Dagger2Gha) OnDispatch(
 	// +optional
 	// +default="."
 	module string,
+	// Dispatch jobs to the given runner
+	// +optional
+	runner string,
 ) *Dagger2Gha {
 	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
-		Pipeline: m.pipeline(command, module),
+		Pipeline: m.pipeline(command, module, runner),
 		Event: WorkflowDispatchEvent{
 			Inputs: nil, // FIXME: add inputs, could be pretty dope
 		},
@@ -142,19 +159,23 @@ func (m *Dagger2Gha) pipeline(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
-	// +optional
-	// +default="."
 	module string,
+	runner string,
 ) Pipeline {
-	return Pipeline{
+	p := Pipeline{
 		DaggerVersion: m.DaggerVersion,
 		PublicToken:   m.PublicToken,
 		NoTraces:      m.NoTraces,
 		StopEngine:    m.StopEngine,
 		AsJson:        m.AsJson,
+		Runner:        m.Runner,
 		Command:       command,
 		Module:        module,
 	}
+	if runner != "" {
+		p.Runner = runner
+	}
+	return p
 }
 
 // A Dagger pipeline to be called from a Github Actions configuration
@@ -173,6 +194,8 @@ type Pipeline struct {
 	StopEngine bool
 	// +private
 	AsJson bool
+	// +private
+	Runner string
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
@@ -256,7 +279,7 @@ func (p *Pipeline) asWorkflow() Workflow {
 		On:   WorkflowTriggers{}, // Triggers intentionally left blank
 		Jobs: map[string]Job{
 			"dagger": Job{
-				RunsOn: "ubuntu-latest",
+				RunsOn: p.Runner,
 				Steps: []JobStep{
 					p.checkoutStep(),
 					p.installDaggerStep(),
