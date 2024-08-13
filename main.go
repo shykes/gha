@@ -67,18 +67,25 @@ func (m *Dagger2Gha) OnPush(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
+	// The Dagger module to load
 	// +optional
 	// +default="."
 	module string,
+	// Run only on push to specific branches
 	// +optional
 	branches []string,
+	// Run only on push to specific branches
 	// +optional
 	tags []string,
+	// Run only on push to specific paths
+	// +optional
+	paths []string,
 ) *Dagger2Gha {
 	m.PushTriggers = append(m.PushTriggers, PushTrigger{
 		Event: PushEvent{
 			Branches: branches,
 			Tags:     tags,
+			Paths:    paths,
 		},
 		Pipeline: m.pipeline(command, module),
 	})
