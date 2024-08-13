@@ -336,30 +336,37 @@ func (p *Pipeline) installDaggerStep() JobStep {
 }
 
 func (p *Pipeline) callDaggerStep() JobStep {
-	step := JobStep{
+	return JobStep{
 		Name:  "dagger call",
 		Shell: "bash",
 		Run:   "dagger call " + p.Command,
-		Env:   map[string]string{},
+		Env:   p.env(),
 	}
-	if p.Module != "" {
-		step.Env["DAGGER_MODULE"] = p.Module
-	}
+}
+
+func (p *Pipeline) env() map[string]string {
+	env := map[string]string{}
+	// Inject user-defined secrets
 	for _, secretName := range p.Secrets {
-		step.Env[secretName] = fmt.Sprintf("${{ secrets.%s }}", secretName)
+		env[secretName] = fmt.Sprintf("${{ secrets.%s }}", secretName)
 	}
+	// Inject module name
+	if p.Module != "" {
+		env["DAGGER_MODULE"] = p.Module
+	}
+	// Inject Dagger Cloud token
 	if !p.NoTraces {
 		if p.PublicToken != "" {
-			step.Env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
+			env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
 			// For backwards compatibility with older engines
-			step.Env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = p.PublicToken
+			env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = p.PublicToken
 		} else {
-			step.Env["DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
+			env["DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 			// For backwards compatibility with older engines
-			step.Env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
+			env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 		}
 	}
-	return step
+	return env
 }
 
 func (p *Pipeline) stopEngineStep() JobStep {
