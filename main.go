@@ -95,10 +95,15 @@ func (m *Dagger2Gha) OnPullRequest(
 	// +optional
 	// Run only for pull requests that target specific branches
 	branches []string,
+	// Run only for certain types of pull request events
+	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
+	// +optional
+	types []string,
 ) *Dagger2Gha {
 	m.PullRequestTriggers = append(m.PullRequestTriggers, PullRequestTrigger{
 		Event: PullRequestEvent{
 			Branches: branches,
+			Types:    types,
 		},
 		Pipeline: m.pipeline(command, module),
 	})
