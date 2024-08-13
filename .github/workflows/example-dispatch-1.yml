@@ -37,6 +37,7 @@ jobs:
             - name: dagger call
               run: dagger call deploy-docs
               env:
+                _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: .
               shell: bash

@@ -37,6 +37,7 @@ jobs:
             - name: dagger call
               run: dagger call hello --name='pull request'
               env:
+                _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/hello
               shell: bash

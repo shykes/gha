@@ -317,8 +317,12 @@ func (p *Pipeline) callDaggerStep() JobStep {
 	if !p.NoTraces {
 		if p.PublicToken != "" {
 			step.Env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
+			// For backwards compatibility with older engines
+			step.Env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = p.PublicToken
 		} else {
 			step.Env["DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
+			// For backwards compatibility with older engines
+			step.Env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 		}
 	}
 	return step
