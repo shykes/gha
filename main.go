@@ -88,10 +88,12 @@ func (m *Dagger2Gha) OnPullRequest(
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
+	// Dagger module to load
 	// +optional
 	// +default="."
 	module string,
 	// +optional
+	// Run only for pull requests that target specific branches
 	branches []string,
 ) *Dagger2Gha {
 	m.PullRequestTriggers = append(m.PullRequestTriggers, PullRequestTrigger{
@@ -169,8 +171,8 @@ func (t PushTrigger) asWorkflow() Workflow {
 	return workflow
 }
 
-func (t PushTrigger) Config(filename string, json bool) *dagger.Directory {
-	return t.asWorkflow().Config(filename, json)
+func (t PushTrigger) Config(filename string, asJson bool) *dagger.Directory {
+	return t.asWorkflow().Config(filename, asJson)
 }
 
 type PullRequestTrigger struct {
@@ -184,8 +186,8 @@ func (t PullRequestTrigger) asWorkflow() Workflow {
 	return workflow
 }
 
-func (t PullRequestTrigger) Config(filename string, json bool) *dagger.Directory {
-	return t.asWorkflow().Config(filename, json)
+func (t PullRequestTrigger) Config(filename string, asJson bool) *dagger.Directory {
+	return t.asWorkflow().Config(filename, asJson)
 }
 
 func (p *Pipeline) Name() string {
