@@ -1,34 +1,41 @@
-{
- "name": "hello --name='pull request'",
- "on": {
-  "pull_request": {}
- },
- "jobs": {
-  "dagger": {
-   "runs-on": "ubuntu-latest",
-   "steps": [
-    {
-     "name": "Checkout",
-     "uses": "actions/checkout@v4"
-    },
-    {
-     "name": "scripts/install-dagger.sh",
-     "run": "#!/bin/bash\n\nset -o pipefail\n# Fallback to /usr/local for backwards compatability\nprefix_dir=\"${RUNNER_TEMP:-/usr/local}\"\n\n# Ensure the dir is writable otherwise fallback to tmpdir\nif [[ ! -d \"$prefix_dir\" ]] || [[ ! -w \"$prefix_dir\" ]]; then\n    prefix_dir=\"$(mktemp -d)\"\nfi\nprintf '%s/bin' \"$prefix_dir\" \u003e\u003e $GITHUB_PATH\n\n# If the dagger version is 'latest', set the version back to an empty\n# string. This allows the install script to detect and install the latest\n# version itself\nif [[ \"$DAGGER_VERSION\" == \"latest\" ]]; then\n  DAGGER_VERSION=\nfi\n\n# The install.sh script creates path ${prefix_dir}/bin\ncurl -fsS https://dl.dagger.io/dagger/install.sh | BIN_DIR=${prefix_dir}/bin sh\n",
-     "env": {
-      "DAGGER_VERSION": "latest"
-     },
-     "shell": "bash"
-    },
-    {
-     "name": "dagger call",
-     "run": "dagger call hello --name='pull request'",
-     "env": {
-      "DAGGER_CLOUD_TOKEN": "${{ secrets.DAGGER_CLOUD_TOKEN }}",
-      "DAGGER_MODULE": "github.com/shykes/hello"
-     },
-     "shell": "bash"
-    }
-   ]
-  }
- }
-}
+name: hello --name='pull request'
+"on":
+    pull_request: {}
+jobs:
+    dagger:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: scripts/install-dagger.sh
+              run: |
+                #!/bin/bash
+
+                set -o pipefail
+                # Fallback to /usr/local for backwards compatability
+                prefix_dir="${RUNNER_TEMP:-/usr/local}"
+
+                # Ensure the dir is writable otherwise fallback to tmpdir
+                if [[ ! -d "$prefix_dir" ]] || [[ ! -w "$prefix_dir" ]]; then
+                    prefix_dir="$(mktemp -d)"
+                fi
+                printf '%s/bin' "$prefix_dir" >> $GITHUB_PATH
+
+                # If the dagger version is 'latest', set the version back to an empty
+                # string. This allows the install script to detect and install the latest
+                # version itself
+                if [[ "$DAGGER_VERSION" == "latest" ]]; then
+                  DAGGER_VERSION=
+                fi
+
+                # The install.sh script creates path ${prefix_dir}/bin
+                curl -fsS https://dl.dagger.io/dagger/install.sh | BIN_DIR=${prefix_dir}/bin sh
+              env:
+                DAGGER_VERSION: latest
+              shell: bash
+            - name: dagger call
+              run: dagger call hello --name='pull request'
+              env:
+                DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+                DAGGER_MODULE: github.com/shykes/hello
+              shell: bash

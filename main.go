@@ -30,12 +30,16 @@ func New(
 	// Explicitly stop the Dagger Engine after completing the pipeline
 	// +optional
 	stopEngine bool,
+	// Encode all files as JSON (which is also valid YAML)
+	// +optional
+	asJson bool,
 ) *Dagger2Gha {
 	return &Dagger2Gha{
 		PublicToken:   publicToken,
 		NoTraces:      noTraces,
 		DaggerVersion: daggerVersion,
 		StopEngine:    stopEngine,
+		AsJson:        asJson,
 	}
 }
 
@@ -52,6 +56,8 @@ type Dagger2Gha struct {
 	NoTraces bool
 	// +private
 	StopEngine bool
+	// +private
+	AsJson bool
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
@@ -110,9 +116,28 @@ func (m *Dagger2Gha) pipeline(
 		PublicToken:   m.PublicToken,
 		NoTraces:      m.NoTraces,
 		StopEngine:    m.StopEngine,
+		AsJson:        m.AsJson,
 		Command:       command,
 		Module:        module,
 	}
+}
+
+// A Dagger pipeline to be called from a Github Actions configuration
+type Pipeline struct {
+	// +private
+	DaggerVersion string
+	// +private
+	PublicToken string
+	// +private
+	Module string
+	// +private
+	Command string
+	// +private
+	NoTraces bool
+	// +private
+	StopEngine bool
+	// +private
+	AsJson bool
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
@@ -124,11 +149,11 @@ func (m *Dagger2Gha) Config(
 	dir := dag.Directory()
 	for i, t := range m.PushTriggers {
 		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename))
+		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
 	}
 	for i, t := range m.PullRequestTriggers {
 		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename))
+		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
 	}
 	return dir
 }
@@ -144,8 +169,8 @@ func (t PushTrigger) asWorkflow() Workflow {
 	return workflow
 }
 
-func (t PushTrigger) Config(filename string) *dagger.Directory {
-	return t.asWorkflow().Config(filename)
+func (t PushTrigger) Config(filename string, json bool) *dagger.Directory {
+	return t.asWorkflow().Config(filename, json)
 }
 
 type PullRequestTrigger struct {
@@ -159,23 +184,8 @@ func (t PullRequestTrigger) asWorkflow() Workflow {
 	return workflow
 }
 
-func (t PullRequestTrigger) Config(filename string) *dagger.Directory {
-	return t.asWorkflow().Config(filename)
-}
-
-type Pipeline struct {
-	// +private
-	DaggerVersion string
-	// +private
-	PublicToken string
-	// +private
-	Module string
-	// +private
-	Command string
-	// +private
-	NoTraces bool
-	// +private
-	StopEngine bool
+func (t PullRequestTrigger) Config(filename string, json bool) *dagger.Directory {
+	return t.asWorkflow().Config(filename, json)
 }
 
 func (p *Pipeline) Name() string {

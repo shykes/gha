@@ -3,6 +3,8 @@ package main
 import (
 	"dagger/dagger-2-gha/internal/dagger"
 	"encoding/json"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Workflow struct {
@@ -12,8 +14,22 @@ type Workflow struct {
 	Env  map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
-func (w Workflow) Config(filename string) *dagger.Directory {
-	contents, err := json.MarshalIndent(w, "", " ")
+// Generate an overlay config directory for this workflow
+func (w Workflow) Config(
+	// Filename of the workflow file under .github/workflows/
+	filename string,
+	// Encode the workflow as JSON, which is valid YAML
+	asJson bool,
+) *dagger.Directory {
+	var (
+		contents []byte
+		err      error
+	)
+	if asJson {
+		contents, err = json.MarshalIndent(w, "", " ")
+	} else {
+		contents, err = yaml.Marshal(w)
+	}
 	if err != nil {
 		panic(err)
 	}
