@@ -7,6 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	genHeader = "# This file was generated. See https://daggerverse.dev/mod/github.com/shykes/dagger2gha"
+)
+
 type Workflow struct {
 	Name string            `json:"name,omitempty" yaml:"name,omitempty"`
 	On   WorkflowTriggers  `json:"on" yaml:"on"`
@@ -35,7 +39,7 @@ func (w Workflow) Config(
 	}
 	return dag.
 		Directory().
-		WithNewFile(".github/workflows/"+filename, string(contents))
+		WithNewFile(".github/workflows/"+filename, genHeader+"\n"+string(contents))
 }
 
 type WorkflowTriggers struct {
