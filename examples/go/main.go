@@ -44,3 +44,14 @@ func (m *Examples) Dagger2Gha() *dagger.Directory {
 			Prefix: "example-",
 		})
 }
+
+// Generate a configuration with a "dispatch" workflow,
+// that can be triggered manually, independently of any platform event.
+func (m *Examples) Dagger2Gha_OnDispatch() *dagger.Directory {
+	return dag.
+		Dagger2Gha().
+		OnDispatch("deploy-docs").
+		Config(dagger.Dagger2GhaConfigOpts{
+			Prefix: "example-",
+		})
+}

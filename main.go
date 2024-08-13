@@ -49,6 +49,8 @@ type Dagger2Gha struct {
 	// +private
 	PullRequestTriggers []PullRequestTrigger
 	// +private
+	DispatchTriggers []DispatchTrigger
+	// +private
 	PublicToken string
 	// +private
 	DaggerVersion string
@@ -110,6 +112,25 @@ func (m *Dagger2Gha) OnPullRequest(
 	return m
 }
 
+// Add a trigger to execute a Dagger pipeline on a workflow dispatch event
+func (m *Dagger2Gha) OnDispatch(
+	// The Dagger command to execute
+	// Example 'build --source=.'
+	command string,
+	// Dagger module to load
+	// +optional
+	// +default="."
+	module string,
+) *Dagger2Gha {
+	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
+		Pipeline: m.pipeline(command, module),
+		Event: WorkflowDispatchEvent{
+			Inputs: nil, // FIXME: add inputs, could be pretty dope
+		},
+	})
+	return m
+}
+
 func (m *Dagger2Gha) pipeline(
 	// The Dagger command to execute
 	// Example 'build --source=.'
@@ -162,6 +183,10 @@ func (m *Dagger2Gha) Config(
 		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
 		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
 	}
+	for i, t := range m.DispatchTriggers {
+		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
+		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
+	}
 	return dir
 }
 
@@ -197,6 +222,23 @@ func (t PullRequestTrigger) Config(filename string, asJson bool) *dagger.Directo
 
 func (p *Pipeline) Name() string {
 	return strings.SplitN(p.Command, " ", 2)[0]
+}
+
+type DispatchTrigger struct {
+	// When this happens...
+	Event WorkflowDispatchEvent
+	// ...run this
+	Pipeline Pipeline
+}
+
+func (t DispatchTrigger) asWorkflow() Workflow {
+	var workflow = t.Pipeline.asWorkflow()
+	workflow.On = WorkflowTriggers{WorkflowDispatch: &(t.Event)}
+	return workflow
+}
+
+func (t DispatchTrigger) Config(filename string, asJson bool) *dagger.Directory {
+	return t.asWorkflow().Config(filename, asJson)
 }
 
 // Generate a GHA workflow from a Dagger pipeline definition.
