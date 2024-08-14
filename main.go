@@ -200,6 +200,28 @@ type Settings struct {
 	Runner string
 }
 
+// Generate a github config directory, usable as an overlay on the repository root
+func (m *Gha) Config(
+	// Prefix to use for generated workflow filenames
+	// +optional
+	prefix string,
+) *dagger.Directory {
+	dir := dag.Directory()
+	for i, t := range m.PushTriggers {
+		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	}
+	for i, t := range m.PullRequestTriggers {
+		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	}
+	for i, t := range m.DispatchTriggers {
+		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	}
+	return dir
+}
+
 func (m *Gha) pipeline(
 	// The Dagger command to execute
 	// Example 'build --source=.'
@@ -234,28 +256,6 @@ type Pipeline struct {
 	SparseCheckout []string
 	// +private
 	Settings Settings
-}
-
-// Generate a github config directory, usable as an overlay on the repository root
-func (m *Gha) Config(
-	// Prefix to use for generated workflow filenames
-	// +optional
-	prefix string,
-) *dagger.Directory {
-	dir := dag.Directory()
-	for i, t := range m.PushTriggers {
-		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
-	}
-	for i, t := range m.PullRequestTriggers {
-		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
-	}
-	for i, t := range m.DispatchTriggers {
-		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
-	}
-	return dir
 }
 
 func (p *Pipeline) Name() string {
