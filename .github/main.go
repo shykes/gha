@@ -26,7 +26,7 @@ func (m *Github) Generate() *dagger.Directory {
 		).
 		OnDispatch(
 			"Demo pipeline 3",
-			"directory with-directory --path=. --source=. glob --pattern=*",
+			"directory with-directory --path=. --directory=. glob --pattern=*",
 			dagger.GhaOnDispatchOpts{
 				Module: "github.com/shykes/core",
 			},

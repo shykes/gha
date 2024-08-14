@@ -133,7 +133,7 @@ jobs:
                 } >"${GITHUB_STEP_SUMMARY}"
               env:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                COMMAND: dagger call -q directory with-directory --path=. --source=. glob --pattern=*
+                COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/core
                 GITHUB_ACTION: ${{ github.action }}
