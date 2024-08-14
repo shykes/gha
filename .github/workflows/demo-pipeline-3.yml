@@ -50,6 +50,7 @@ jobs:
 
                 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
                 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
+                export NO_COLOR="${NO_COLOR:=1}" # Disable colors in dagger logs
 
                 # Ensure the command is provided as an environment variable
                 if [ -z "$COMMAND" ]; then
