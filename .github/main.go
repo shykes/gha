@@ -22,6 +22,12 @@ func (m *Github) Generate() *dagger.Directory {
 				Module:         "github.com/shykes/core",
 			},
 		).
+		OnDispatch(
+			"directory with-directory --path=. --source=. glob --pattern=*",
+			dagger.GhaOnDispatchOpts{
+				Module: "github.com/shykes/core",
+			},
+		).
 		Config().
 		Directory(".github")
 }
