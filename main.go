@@ -306,6 +306,7 @@ func (p *Pipeline) asWorkflow() Workflow {
 	steps := []JobStep{
 		p.checkoutStep(),
 		p.installDaggerStep(),
+		p.warmEngineStep(),
 		p.callDaggerStep(),
 	}
 	if p.Settings.StopEngine {
@@ -343,6 +344,10 @@ func (p *Pipeline) checkoutStep() JobStep {
 		}
 	}
 	return step
+}
+
+func (p *Pipeline) warmEngineStep() JobStep {
+	return p.bashStep("warm-engine", nil)
 }
 
 func (p *Pipeline) installDaggerStep() JobStep {

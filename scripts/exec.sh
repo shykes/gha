@@ -39,42 +39,47 @@ tmp=$(mktemp -d)
 } > "${GITHUB_OUTPUT}"
 
 {
-cat <<'---'
+cat <<'.'
 ## Dagger version
 
 ```
----
+.
+
 dagger version
 
-cat <<'---'
+cat <<'.'
 ```
 
 ## Pipeline command
 
 ```bash
----
-echo "DAGGER_MODULE=$DAGGER_MODULE \"
+.
+
+echo "DAGGER_MODULE=$DAGGER_MODULE \\"
 echo " $COMMAND"
 
-cat <<'---'
+cat <<'.'
 ```
 
 ## Pipeline result
 
 ```
----
+.
+
 cat $tmp/stdout.txt
 
-cat <<'---'
+cat <<'.'
 ```
 
 ## Pipeline logs
 
 ```
----
+.
+
 cat $tmp/stderr.txt
 
-cat <<'---'
+cat <<'.'
 ```
----
+.
+
 } >"${GITHUB_STEP_SUMMARY}"
