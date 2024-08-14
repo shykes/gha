@@ -28,33 +28,45 @@ func (m *Examples) ContainerStuff(ctx context.Context, source *dagger.Directory)
 		Stdout(ctx)
 }
 
-// Generate a simple configuration triggered by git push on main, and pull requests
-// 1. Prints "hello, main!" on push to main
-// 2. Prints "hello, pull request!" on new pull request
-func (m *Examples) Gha() *dagger.Directory {
+// Generate a simple configuration triggered by git push on main
+func (m *Examples) GhaOnPush() *dagger.Directory {
 	return dag.
 		Gha().
 		OnPush("hello --name=main", dagger.GhaOnPushOpts{
 			Branches: []string{"main"},
 			Module:   "github.com/shykes/hello",
 		}).
+		Config()
+}
+
+// Generate a simple configuration triggered by a pull request
+func (m *Examples) GhaOnPullRequest() *dagger.Directory {
+	return dag.
+		Gha().
 		OnPullRequest("hello --name='pull request'", dagger.GhaOnPullRequestOpts{
 			Module: "github.com/shykes/hello",
 		}).
-		Config(dagger.GhaConfigOpts{
-			Prefix: "example-",
-		})
+		Config()
 }
 
-// Generate a configuration with a "dispatch" workflow,
-// that can be triggered manually, independently of any platform event.
-func (m *Examples) Gha_OnDispatch() *dagger.Directory {
+// Access Github secrets
+func (m *Examples) Gha_Secrets() *dagger.Directory {
 	return dag.
 		Gha().
 		OnDispatch("deploy-docs", dagger.GhaOnDispatchOpts{
 			Secrets: []string{"DOCS_SERVER_PASSWORD"},
 		}).
-		Config(dagger.GhaConfigOpts{
-			Prefix: "example-",
-		})
+		Config()
+}
+
+// Access github context information magically injected as env variables
+func (m *Examples) Gha_GithubContext() *dagger.Directory {
+	return dag.
+		Gha().
+		OnDispatch(
+			"git --url=https://github.com/$GITHUB_REPOSITORY branch --name=$GITHUB_REF tree glob --pattern=*",
+			dagger.GhaOnDispatchOpts{
+				Module: "github.com/shykes/core",
+			}).
+		Config()
 }
