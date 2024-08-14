@@ -180,6 +180,8 @@ type Gha struct {
 	// +private
 	DispatchTriggers []DispatchTrigger
 	// +private
+	IssueCommentTriggers []IssueCommentTrigger
+	// +private
 	Settings Settings
 }
 

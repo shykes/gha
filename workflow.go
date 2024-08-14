@@ -47,7 +47,7 @@ type WorkflowTriggers struct {
 	PullRequest      *PullRequestEvent      `json:"pull_request,omitempty" yaml:"pull_request,omitempty"`
 	Schedule         []ScheduledEvent       `json:"schedule,omitempty" yaml:"schedule,omitempty"`
 	WorkflowDispatch *WorkflowDispatchEvent `json:"workflow_dispatch,omitempty" yaml:"workflow_dispatch,omitempty"`
-	// Other event types can be added here...
+	IssueComment     *IssueCommentEvent     `json:"issue_comment,omitempty" yaml:"issue_comment,omitempty"`
 }
 
 type PushEvent struct {
@@ -69,6 +69,10 @@ type ScheduledEvent struct {
 
 type WorkflowDispatchEvent struct {
 	Inputs map[string]DispatchInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+}
+
+type IssueCommentEvent struct {
+	Types []string `json:"types,omitempty" yaml:"types,omitempty"`
 }
 
 type DispatchInput struct {
