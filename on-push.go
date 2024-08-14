@@ -9,7 +9,6 @@ func (m *Gha) OnPush(
 	command string,
 	// The Dagger module to load
 	// +optional
-	// +default="."
 	module string,
 	// Github secrets to inject into the pipeline environment.
 	// For each secret, an env variable with the same name is created.
@@ -33,9 +32,6 @@ func (m *Gha) OnPush(
 	// +optional
 	sparseCheckout []string,
 ) *Gha {
-	if err := validateSecretNames(secrets); err != nil {
-		panic(err) // FIXME
-	}
 	m.PushTriggers = append(m.PushTriggers, PushTrigger{
 		Event: PushEvent{
 			Branches: branches,

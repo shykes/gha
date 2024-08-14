@@ -200,6 +200,30 @@ type Settings struct {
 	Runner string
 }
 
+func (m *Gha) Check(ctx context.Context, repo *dagger.Directory) (*Gha, error) {
+	for _, t := range m.PushTriggers {
+		if err := t.Pipeline.Check(ctx, repo); err != nil {
+			return m, err
+		}
+	}
+	for _, t := range m.PullRequestTriggers {
+		if err := t.Pipeline.Check(ctx, repo); err != nil {
+			return m, err
+		}
+	}
+	for _, t := range m.DispatchTriggers {
+		if err := t.Pipeline.Check(ctx, repo); err != nil {
+			return m, err
+		}
+	}
+	for _, t := range m.IssueCommentTriggers {
+		if err := t.Pipeline.Check(ctx, repo); err != nil {
+			return m, err
+		}
+	}
+	return m, nil
+}
+
 // Generate a github config directory, usable as an overlay on the repository root
 func (m *Gha) Config(
 	// Prefix to use for generated workflow filenames
@@ -217,6 +241,10 @@ func (m *Gha) Config(
 	}
 	for i, t := range m.DispatchTriggers {
 		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	}
+	for i, t := range m.IssueCommentTriggers {
+		filename := fmt.Sprintf("%sissue-comment-%d.yml", prefix, i+1)
 		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
 	}
 	return dir
@@ -260,6 +288,53 @@ type Pipeline struct {
 
 func (p *Pipeline) Name() string {
 	return strings.SplitN(p.Command, " ", 2)[0]
+}
+
+func (p *Pipeline) checkSecretNames() error {
+	// check if the secret name contains only alphanumeric characters and underscores.
+	validName := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	for _, secretName := range p.Secrets {
+		if !validName.MatchString(secretName) {
+			return errors.New("invalid secret name: '" + secretName + "' must contain only alphanumeric characters and underscores")
+		}
+	}
+	return nil
+}
+
+func (p *Pipeline) checkCommandAndModule(ctx context.Context, repo *dagger.Directory) error {
+	script := "dagger call"
+	if p.Module != "" {
+		script = script + " -m '" + p.Module + "' "
+	}
+	script = script + p.Command + " --help"
+	_, err := dag.
+		Wolfi().
+		Container(dagger.WolfiContainerOpts{
+			Packages: []string{"dagger", "bash"},
+		}).
+		WithMountedDirectory("/src", repo).
+		WithWorkdir("/src").
+		WithExec(
+			[]string{"bash", "-c", script},
+			dagger.ContainerWithExecOpts{ExperimentalPrivilegedNesting: true},
+		).
+		Sync(ctx)
+	return err
+}
+
+// Check that the pipeline is valid, in a best effort way
+func (p *Pipeline) Check(
+	ctx context.Context,
+	// +defaultPath="/"
+	repo *dagger.Directory,
+) error {
+	if err := p.checkSecretNames(); err != nil {
+		return err
+	}
+	if err := p.checkCommandAndModule(ctx, repo); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Generate a GHA workflow from a Dagger pipeline definition.
@@ -371,15 +446,4 @@ func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
 		Run:   script,
 		Env:   env,
 	}
-}
-
-// check if the secret name contains only alphanumeric characters and underscores.
-func validateSecretNames(secrets []string) error {
-	validName := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	for _, secretName := range secrets {
-		if !validName.MatchString(secretName) {
-			return errors.New("invalid secret name: '" + secretName + "' must contain only alphanumeric characters and underscores")
-		}
-	}
-	return nil
 }

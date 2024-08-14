@@ -1,6 +1,12 @@
 {
   "name": "gha",
   "sdk": "go",
+  "dependencies": [
+    {
+      "name": "wolfi",
+      "source": "github.com/shykes/daggerverse/wolfi@c32c202f5ea58a050779b5d22d68d1e74a2f068e"
+    }
+  ],
   "source": ".",
   "engineVersion": "v0.12.4"
 }

@@ -11,7 +11,6 @@ func (m *Gha) OnDispatch(
 	command string,
 	// Dagger module to load
 	// +optional
-	// +default="."
 	module string,
 	// Github secrets to inject into the pipeline environment.
 	// For each secret, an env variable with the same name is created.
@@ -26,9 +25,6 @@ func (m *Gha) OnDispatch(
 	// +optional
 	sparseCheckout []string,
 ) *Gha {
-	if err := validateSecretNames(secrets); err != nil {
-		panic(err) // FIXME
-	}
 	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
 		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
 		Event: WorkflowDispatchEvent{

@@ -9,7 +9,6 @@ func (m *Gha) OnIssueComment(
 	command string,
 	// The Dagger module to load
 	// +optional
-	// +default="."
 	module string,
 	// Github secrets to inject into the pipeline environment.
 	// For each secret, an env variable with the same name is created.
@@ -28,9 +27,6 @@ func (m *Gha) OnIssueComment(
 	// +optional
 	types []string,
 ) *Gha {
-	if err := validateSecretNames(secrets); err != nil {
-		panic(err) // FIXME
-	}
 	m.IssueCommentTriggers = append(m.IssueCommentTriggers, IssueCommentTrigger{
 		Event: IssueCommentEvent{
 			Types: types,

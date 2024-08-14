@@ -11,7 +11,6 @@ func (m *Gha) OnPullRequest(
 	command string,
 	// Dagger module to load
 	// +optional
-	// +default="."
 	module string,
 	// Github secrets to inject into the pipeline environment.
 	// For each secret, an env variable with the same name is created.
@@ -33,9 +32,6 @@ func (m *Gha) OnPullRequest(
 	// +optional
 	sparseCheckout []string,
 ) *Gha {
-	if err := validateSecretNames(secrets); err != nil {
-		panic(err) // FIXME
-	}
 	m.PullRequestTriggers = append(m.PullRequestTriggers, PullRequestTrigger{
 		Event: PullRequestEvent{
 			Branches: branches,
