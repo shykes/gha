@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # Ensure the command is provided as an environment variable
 if [ -z "$COMMAND" ]; then
   echo "Error: Please set the COMMAND environment variable."

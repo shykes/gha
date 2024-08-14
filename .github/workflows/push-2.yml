@@ -1,5 +1,5 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
-name: directory with-directory --path=. --source=. glob --pattern=*
+name: directory with-directory --path=. --directory=. glob --pattern=*
 "on":
     push: {}
 jobs:
@@ -48,6 +48,8 @@ jobs:
               run: |
                 #!/bin/bash
 
+                set -x
+
                 # Ensure the command is provided as an environment variable
                 if [ -z "$COMMAND" ]; then
                   echo "Error: Please set the COMMAND environment variable."
@@ -84,7 +86,7 @@ jobs:
                 } > "${GITHUB_OUTPUT:=github-output.txt}"
               env:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                COMMAND: dagger call -q directory with-directory --path=. --source=. glob --pattern=*
+                COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/core
                 GITHUB_ACTION: ${{ github.action }}

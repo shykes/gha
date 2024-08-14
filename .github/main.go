@@ -16,7 +16,7 @@ func (m *Github) Generate() *dagger.Directory {
 				Module: "github.com/shykes/core",
 			}).
 		OnPush(
-			"directory with-directory --path=. --source=. glob --pattern=*",
+			"directory with-directory --path=. --directory=. glob --pattern=*",
 			dagger.GhaOnPushOpts{
 				SparseCheckout: []string{"misc", "scripts"},
 				Module:         "github.com/shykes/core",
