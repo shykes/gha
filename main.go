@@ -265,21 +265,24 @@ func (p *Pipeline) Name() string {
 // Generate a GHA workflow from a Dagger pipeline definition.
 // The workflow will have no triggers, they should be filled separately.
 func (p *Pipeline) asWorkflow() Workflow {
-	workflow := Workflow{
+	steps := []JobStep{
+		p.checkoutStep(),
+		p.installDaggerStep(),
+		p.callDaggerStep(),
+	}
+	if p.Settings.StopEngine {
+		steps = append(steps, p.stopEngineStep())
+	}
+	return Workflow{
 		Name: p.Command,
 		On:   WorkflowTriggers{}, // Triggers intentionally left blank
 		Jobs: map[string]Job{
 			"dagger": Job{
 				RunsOn: p.Settings.Runner,
-				Steps: []JobStep{
-					p.checkoutStep(),
-					p.installDaggerStep(),
-					p.callDaggerStep(),
-				},
+				Steps:  steps,
 			},
 		},
 	}
-	return workflow
 }
 
 func (p *Pipeline) checkoutStep() JobStep {
