@@ -28,6 +28,10 @@ func (m *Gha) OnPush(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
+	// Use a sparse git checkout, only including the given paths
+	// Example: ["src", "tests", "Dockerfile"]
+	// +optional
+	sparseCheckout []string,
 ) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
@@ -38,7 +42,7 @@ func (m *Gha) OnPush(
 			Tags:     tags,
 			Paths:    paths,
 		},
-		Pipeline: m.pipeline(command, module, runner, secrets),
+		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
 	})
 	return m
 }

@@ -207,12 +207,14 @@ func (m *Gha) pipeline(
 	module string,
 	runner string,
 	secrets []string,
+	sparseCheckout []string,
 ) Pipeline {
 	p := Pipeline{
-		Command:  command,
-		Module:   module,
-		Secrets:  secrets,
-		Settings: m.Settings,
+		Command:        command,
+		Module:         module,
+		Secrets:        secrets,
+		SparseCheckout: sparseCheckout,
+		Settings:       m.Settings,
 	}
 	if runner != "" {
 		p.Settings.Runner = runner
@@ -228,6 +230,8 @@ type Pipeline struct {
 	Command string
 	// +private
 	Secrets []string
+	// +private
+	SparseCheckout []string
 	// +private
 	Settings Settings
 }
@@ -279,10 +283,21 @@ func (p *Pipeline) asWorkflow() Workflow {
 }
 
 func (p *Pipeline) checkoutStep() JobStep {
-	return JobStep{
+	step := JobStep{
 		Name: "Checkout",
 		Uses: "actions/checkout@v4",
 	}
+	if p.SparseCheckout != nil {
+		// Include common dagger paths in the checkout, to make
+		// sure local modules work by default
+		// FIXME: this is only a guess, we need the 'source' field of dagger.json
+		//  to be sure.
+		sparseCheckout := append(p.SparseCheckout, "dagger.json", ".dagger", "dagger", "ci")
+		step.With = map[string]string{
+			"sparse-checkout": strings.Join(sparseCheckout, "\n"),
+		}
+	}
+	return step
 }
 
 func (p *Pipeline) installDaggerStep() JobStep {

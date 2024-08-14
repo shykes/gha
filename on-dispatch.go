@@ -21,12 +21,16 @@ func (m *Gha) OnDispatch(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
+	// Use a sparse git checkout, only including the given paths
+	// Example: ["src", "tests", "Dockerfile"]
+	// +optional
+	sparseCheckout []string,
 ) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
 	}
 	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
-		Pipeline: m.pipeline(command, module, runner, secrets),
+		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
 		Event: WorkflowDispatchEvent{
 			Inputs: nil, // FIXME: add inputs, could be pretty dope
 		},

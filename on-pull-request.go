@@ -28,6 +28,10 @@ func (m *Gha) OnPullRequest(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
+	// Use a sparse git checkout, only including the given paths
+	// Example: ["src", "tests", "Dockerfile"]
+	// +optional
+	sparseCheckout []string,
 ) *Gha {
 	if err := validateSecretNames(secrets); err != nil {
 		panic(err) // FIXME
@@ -37,7 +41,7 @@ func (m *Gha) OnPullRequest(
 			Branches: branches,
 			Types:    types,
 		},
-		Pipeline: m.pipeline(command, module, runner, secrets),
+		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
 	})
 	return m
 }

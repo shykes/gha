@@ -19,6 +19,10 @@ func (m *Gha) OnIssueComment(
 	// Dispatch jobs to the given runner
 	// +optional
 	runner string,
+	// Use a sparse git checkout, only including the given paths
+	// Example: ["src", "tests", "Dockerfile"]
+	// +optional
+	sparseCheckout []string,
 	// Run only for certain types of issue comment events
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#issue_comment
 	// +optional
@@ -31,7 +35,7 @@ func (m *Gha) OnIssueComment(
 		Event: IssueCommentEvent{
 			Types: types,
 		},
-		Pipeline: m.pipeline(command, module, runner, secrets),
+		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
 	})
 	return m
 }
