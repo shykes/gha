@@ -318,6 +318,10 @@ func (p *Pipeline) asWorkflow() Workflow {
 			"dagger": Job{
 				RunsOn: p.Settings.Runner,
 				Steps:  steps,
+				Outputs: map[string]string{
+					"stdout": "${{ steps.exec.outputs.stdout }}",
+					"stderr": "${{ steps.exec.outputs.stderr }}",
+				},
 			},
 		},
 	}
@@ -342,22 +346,15 @@ func (p *Pipeline) checkoutStep() JobStep {
 }
 
 func (p *Pipeline) installDaggerStep() JobStep {
-	return p.bashStep("scripts/install-dagger.sh", map[string]string{
+	return p.bashStep("install-dagger", map[string]string{
 		"DAGGER_VERSION": p.Settings.DaggerVersion,
 	})
 }
 
 func (p *Pipeline) callDaggerStep() JobStep {
-	return JobStep{
-		Name:  "dagger call",
-		Shell: "bash",
-		Run:   "dagger call -q " + p.Command,
-		Env:   p.env(),
-	}
-}
-
-func (p *Pipeline) env() map[string]string {
 	env := map[string]string{}
+	// Inject dagger command
+	env["COMMAND"] = "dagger call -q " + p.Command
 	// Inject user-defined secrets
 	for _, secretName := range p.Secrets {
 		env[secretName] = fmt.Sprintf("${{ secrets.%s }}", secretName)
@@ -383,16 +380,17 @@ func (p *Pipeline) env() map[string]string {
 	for _, key := range githubContextKeys {
 		env["GITHUB_"+strings.ToUpper(key)] = fmt.Sprintf("${{ github.%s }}", key)
 	}
-	return env
+	return p.bashStep("exec", env)
 }
 
 func (p *Pipeline) stopEngineStep() JobStep {
 	return p.bashStep("scripts/stop-engine.sh", nil)
 }
 
-// Return a github actions step which executes the script embedded at <filename>.
+// Return a github actions step which executes the script embedded at scripts/<filename>.sh
 // The script must be checked in with the module source code.
-func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
+func (p *Pipeline) bashStep(id string, env map[string]string) JobStep {
+	filename := "scripts/" + id + ".sh"
 	script, err := dag.
 		CurrentModule().
 		Source().
@@ -405,6 +403,7 @@ func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
 	}
 	return JobStep{
 		Name:  filename,
+		ID:    id,
 		Shell: "bash",
 		Run:   script,
 		Env:   env,

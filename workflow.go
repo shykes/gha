@@ -88,11 +88,12 @@ type Job struct {
 	Env            map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 	Strategy       *Strategy         `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 	TimeoutMinutes int               `json:"timeout-minutes,omitempty" yaml:"timeout-minutes,omitempty"`
-	// Other job-specific fields can be added here...
+	Outputs        map[string]string `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 type JobStep struct {
 	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ID             string            `json:"id,omitempty" yaml:"id,omitempty"`
 	Uses           string            `json:"uses,omitempty" yaml:"uses,omitempty"`
 	Run            string            `json:"run,omitempty" yaml:"run,omitempty"`
 	With           map[string]string `json:"with,omitempty" yaml:"with,omitempty"`
