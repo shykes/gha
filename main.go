@@ -160,14 +160,14 @@ func New(
 	// +default="ubuntu-latest"
 	runner string,
 ) *Gha {
-	return &Gha{
+	return &Gha{Settings: Settings{
 		PublicToken:   publicToken,
 		NoTraces:      noTraces,
 		DaggerVersion: daggerVersion,
 		StopEngine:    stopEngine,
 		AsJson:        asJson,
 		Runner:        runner,
-	}
+	}}
 }
 
 type Gha struct {
@@ -177,6 +177,11 @@ type Gha struct {
 	PullRequestTriggers []PullRequestTrigger
 	// +private
 	DispatchTriggers []DispatchTrigger
+	// +private
+	Settings Settings
+}
+
+type Settings struct {
 	// +private
 	PublicToken string
 	// +private
@@ -200,18 +205,13 @@ func (m *Gha) pipeline(
 	secrets []string,
 ) Pipeline {
 	p := Pipeline{
-		DaggerVersion: m.DaggerVersion,
-		PublicToken:   m.PublicToken,
-		NoTraces:      m.NoTraces,
-		StopEngine:    m.StopEngine,
-		AsJson:        m.AsJson,
-		Runner:        m.Runner,
-		Command:       command,
-		Module:        module,
-		Secrets:       secrets,
+		Command:  command,
+		Module:   module,
+		Secrets:  secrets,
+		Settings: m.Settings,
 	}
 	if runner != "" {
-		p.Runner = runner
+		p.Settings.Runner = runner
 	}
 	return p
 }
@@ -219,23 +219,13 @@ func (m *Gha) pipeline(
 // A Dagger pipeline to be called from a Github Actions configuration
 type Pipeline struct {
 	// +private
-	DaggerVersion string
-	// +private
-	PublicToken string
-	// +private
 	Module string
 	// +private
 	Command string
 	// +private
-	NoTraces bool
-	// +private
-	StopEngine bool
-	// +private
-	AsJson bool
-	// +private
-	Runner string
-	// +private
 	Secrets []string
+	// +private
+	Settings Settings
 }
 
 // Generate a github config directory, usable as an overlay on the repository root
@@ -247,15 +237,15 @@ func (m *Gha) Config(
 	dir := dag.Directory()
 	for i, t := range m.PushTriggers {
 		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
 	}
 	for i, t := range m.PullRequestTriggers {
 		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
 	}
 	for i, t := range m.DispatchTriggers {
 		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.AsJson))
+		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
 	}
 	return dir
 }
@@ -272,7 +262,7 @@ func (p *Pipeline) asWorkflow() Workflow {
 		On:   WorkflowTriggers{}, // Triggers intentionally left blank
 		Jobs: map[string]Job{
 			"dagger": Job{
-				RunsOn: p.Runner,
+				RunsOn: p.Settings.Runner,
 				Steps: []JobStep{
 					p.checkoutStep(),
 					p.installDaggerStep(),
@@ -293,7 +283,7 @@ func (p *Pipeline) checkoutStep() JobStep {
 
 func (p *Pipeline) installDaggerStep() JobStep {
 	return p.bashStep("scripts/install-dagger.sh", map[string]string{
-		"DAGGER_VERSION": p.DaggerVersion,
+		"DAGGER_VERSION": p.Settings.DaggerVersion,
 	})
 }
 
@@ -317,11 +307,11 @@ func (p *Pipeline) env() map[string]string {
 		env["DAGGER_MODULE"] = p.Module
 	}
 	// Inject Dagger Cloud token
-	if !p.NoTraces {
-		if p.PublicToken != "" {
-			env["DAGGER_CLOUD_TOKEN"] = p.PublicToken
+	if !p.Settings.NoTraces {
+		if p.Settings.PublicToken != "" {
+			env["DAGGER_CLOUD_TOKEN"] = p.Settings.PublicToken
 			// For backwards compatibility with older engines
-			env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = p.PublicToken
+			env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = p.Settings.PublicToken
 		} else {
 			env["DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 			// For backwards compatibility with older engines
