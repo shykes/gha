@@ -142,7 +142,6 @@ type PushEvent struct {
 type PullRequestEvent struct {
 	Types    []string `json:"types,omitempty" yaml:"types,omitempty"`
 	Branches []string `json:"branches,omitempty" yaml:"branches,omitempty"`
-	Tags     []string `json:"tags,omitempty" yaml:"tags,omitempty"`
 	Paths    []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 }
 
@@ -151,7 +150,8 @@ type ScheduledEvent struct {
 }
 
 type WorkflowDispatchEvent struct {
-	Inputs map[string]DispatchInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	// FIXME: The Dagger API can't serialize maps
+	// Inputs map[string]DispatchInput `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
 
 type IssueCommentEvent struct {

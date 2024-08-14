@@ -3,7 +3,7 @@ name: Demo pipeline 3
 "on":
     workflow_dispatch: {}
 jobs:
-    Demo-pipeline-3:
+    dagger:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout

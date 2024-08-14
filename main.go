@@ -54,13 +54,7 @@ func New(
 
 type Gha struct {
 	// +private
-	PushTriggers []PushTrigger
-	// +private
-	PullRequestTriggers []PullRequestTrigger
-	// +private
-	DispatchTriggers []DispatchTrigger
-	// +private
-	IssueCommentTriggers []IssueCommentTrigger
+	Pipelines []*Pipeline
 	// +private
 	Settings Settings
 }
@@ -81,23 +75,8 @@ type Settings struct {
 }
 
 func (m *Gha) Check(ctx context.Context, repo *dagger.Directory) (*Gha, error) {
-	for _, t := range m.PushTriggers {
-		if err := t.Pipeline.Check(ctx, repo); err != nil {
-			return m, err
-		}
-	}
-	for _, t := range m.PullRequestTriggers {
-		if err := t.Pipeline.Check(ctx, repo); err != nil {
-			return m, err
-		}
-	}
-	for _, t := range m.DispatchTriggers {
-		if err := t.Pipeline.Check(ctx, repo); err != nil {
-			return m, err
-		}
-	}
-	for _, t := range m.IssueCommentTriggers {
-		if err := t.Pipeline.Check(ctx, repo); err != nil {
+	for _, p := range m.Pipelines {
+		if err := p.Check(ctx, repo); err != nil {
 			return m, err
 		}
 	}
@@ -111,34 +90,40 @@ func (m *Gha) Config(
 	prefix string,
 ) *dagger.Directory {
 	dir := dag.Directory()
-	for _, t := range m.PushTriggers {
-		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
-	}
-	for _, t := range m.PullRequestTriggers {
-		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
-	}
-	for _, t := range m.DispatchTriggers {
-		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
-	}
-	for _, t := range m.IssueCommentTriggers {
-		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
+	for _, p := range m.Pipelines {
+		dir = dir.WithDirectory(".", p.Config())
 	}
 	return dir
 }
 
-func (m *Gha) pipeline(
-	// The pipeline name
-	//  This is used when generating the workflow config file
+// Register a new dagger pipeline, with no triggers
+// Use the pipeline name to attach triggers in follow-up calls
+func (m *Gha) WithPipeline(
+	// Pipeline name
 	name string,
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
+	// The Dagger module to load
+	// +optional
 	module string,
+	// Dispatch jobs to the given runner
+	// +optional
 	runner string,
+	// Github secrets to inject into the pipeline environment.
+	// For each secret, an env variable with the same name is created.
+	// Example: ["PROD_DEPLOY_TOKEN", "PRIVATE_SSH_KEY"]
+	// +optional
 	secrets []string,
+	// Use a sparse git checkout, only including the given paths
+	// Example: ["src", "tests", "Dockerfile"]
+	// +optional
 	sparseCheckout []string,
-) Pipeline {
-	p := Pipeline{
+	// Allow this pipeline to be manually "dispatched"
+	// +optional
+	dispatch bool,
+) *Gha {
+	p := &Pipeline{
 		Name:           name,
 		Command:        command,
 		Module:         module,
@@ -146,10 +131,99 @@ func (m *Gha) pipeline(
 		SparseCheckout: sparseCheckout,
 		Settings:       m.Settings,
 	}
+	if dispatch {
+		p.Triggers.WorkflowDispatch = &WorkflowDispatchEvent{}
+	}
 	if runner != "" {
 		p.Settings.Runner = runner
 	}
-	return p
+	m.Pipelines = append(m.Pipelines, p)
+	return m
+}
+
+// Add a trigger to execute a Dagger pipeline on an issue comment
+func (m *Gha) OnIssueComment(
+	// Name of the pipeline to trigger
+	pipeline string,
+	// Run only for certain types of issue comment events
+	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#issue_comment
+	// +optional
+	types []string,
+) (*Gha, error) {
+	p := m.pipeline(pipeline)
+	if p == nil {
+		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	}
+	if p.Triggers.IssueComment == nil {
+		p.Triggers.IssueComment = &IssueCommentEvent{}
+	}
+	p.Triggers.IssueComment.Types = append(p.Triggers.IssueComment.Types, types...)
+	return m, nil
+}
+
+// Add a trigger to execute a Dagger pipeline on a pull request
+func (m *Gha) OnPullRequest(
+	// Name of the pipeline to trigger
+	pipeline string,
+	// Run only for certain types of pull request events
+	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
+	// +optional
+	types []string,
+	// Run only for pull requests that target specific branches
+	// +optional
+	branches []string,
+	// Run only for pull requests that target specific paths
+	// +optional
+	paths []string,
+) (*Gha, error) {
+	p := m.pipeline(pipeline)
+	if p == nil {
+		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	}
+	if p.Triggers.PullRequest == nil {
+		p.Triggers.PullRequest = &PullRequestEvent{}
+	}
+	p.Triggers.PullRequest.Types = append(p.Triggers.PullRequest.Types, types...)
+	p.Triggers.PullRequest.Branches = append(p.Triggers.PullRequest.Branches, branches...)
+	p.Triggers.PullRequest.Paths = append(p.Triggers.PullRequest.Paths, paths...)
+	return m, nil
+}
+
+// Add a trigger to execute a Dagger pipeline on a git push
+func (m *Gha) OnPush(
+	// Name of the pipeline to trigger
+	pipeline string,
+	// Run only on push to specific branches
+	// +optional
+	branches []string,
+	// Run only on push to specific tags
+	// +optional
+	tags []string,
+	// Run only on push to specific paths
+	// +optional
+	paths []string,
+) (*Gha, error) {
+	p := m.pipeline(pipeline)
+	if p == nil {
+		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	}
+	if p.Triggers.Push == nil {
+		p.Triggers.Push = &PushEvent{}
+	}
+	p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
+	p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
+	p.Triggers.Push.Paths = append(p.Triggers.Push.Paths, paths...)
+	return m, nil
+}
+
+// Lookup a pipeline
+func (m *Gha) pipeline(name string) *Pipeline {
+	for _, p := range m.Pipelines {
+		if p.Name == name {
+			return p
+		}
+	}
+	return nil
 }
 
 // A Dagger pipeline to be called from a Github Actions configuration
@@ -166,6 +240,12 @@ type Pipeline struct {
 	SparseCheckout []string
 	// +private
 	Settings Settings
+	// +private
+	Triggers WorkflowTriggers
+}
+
+func (p *Pipeline) Config() *dagger.Directory {
+	return p.asWorkflow().Config(p.workflowFilename(), p.Settings.AsJson)
 }
 
 func (p *Pipeline) checkSecretNames() error {
@@ -229,7 +309,7 @@ func (p *Pipeline) asWorkflow() Workflow {
 	}
 	return Workflow{
 		Name: p.Name,
-		On:   WorkflowTriggers{}, // Triggers intentionally left blank
+		On:   p.Triggers,
 		Jobs: map[string]Job{
 			p.jobID(): Job{
 				RunsOn: p.Settings.Runner,
@@ -257,24 +337,7 @@ func (p *Pipeline) workflowFilename() string {
 }
 
 func (p *Pipeline) jobID() string {
-	// Define regex to match allowed characters
-	allowedChars := regexp.MustCompile(`[^a-zA-Z0-9_-]`)
-	startWithLetterOrUnderscore := regexp.MustCompile(`^[^a-zA-Z_]`)
-
-	id := strings.ReplaceAll(p.Name, " ", "-")
-	// Remove all invalid characters
-	id = allowedChars.ReplaceAllString(id, "")
-
-	// Ensure it starts with a letter or underscore
-	if startWithLetterOrUnderscore.MatchString(id) {
-		id = "_" + id
-	}
-
-	// Truncate if longer than 100 characters
-	if len(id) > 99 {
-		id = id[:99]
-	}
-	return id
+	return "dagger"
 }
 
 func (p *Pipeline) checkoutStep() JobStep {

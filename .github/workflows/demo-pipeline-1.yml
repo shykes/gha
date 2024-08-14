@@ -1,9 +1,14 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
 name: Demo pipeline 1
 "on":
-    push: {}
+    push:
+        branches:
+            - main
+        tags:
+            - '*'
+    pull_request: {}
 jobs:
-    Demo-pipeline-1:
+    dagger:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
