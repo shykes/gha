@@ -4,6 +4,8 @@ import "github.com/shykes/gha/internal/dagger"
 
 // Add a trigger to execute a Dagger pipeline on an issue comment
 func (m *Gha) OnIssueComment(
+	// Pipeline name
+	name string,
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -31,7 +33,7 @@ func (m *Gha) OnIssueComment(
 		Event: IssueCommentEvent{
 			Types: types,
 		},
-		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
+		Pipeline: m.pipeline(name, command, module, runner, secrets, sparseCheckout),
 	})
 	return m
 }

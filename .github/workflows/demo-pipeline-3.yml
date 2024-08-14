@@ -1,21 +1,13 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
-name: directory with-directory --path=. --directory=. glob --pattern=*
+name: Demo pipeline 3
 "on":
-    push: {}
+    workflow_dispatch: {}
 jobs:
-    dagger:
+    Demo-pipeline-3:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-              with:
-                sparse-checkout: |-
-                    misc
-                    scripts
-                    dagger.json
-                    .dagger
-                    dagger
-                    ci
             - name: scripts/install-dagger.sh
               id: install-dagger
               run: |
@@ -141,7 +133,7 @@ jobs:
                 } >"${GITHUB_STEP_SUMMARY}"
               env:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
+                COMMAND: dagger call -q directory with-directory --path=. --source=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/core
                 GITHUB_ACTION: ${{ github.action }}

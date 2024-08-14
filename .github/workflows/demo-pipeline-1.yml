@@ -1,9 +1,9 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
-name: git --url=https://github.com/$GITHUB_REPOSITORY branch --name=$GITHUB_REF tree glob --pattern=*
+name: Demo pipeline 1
 "on":
     push: {}
 jobs:
-    dagger:
+    Demo-pipeline-1:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout

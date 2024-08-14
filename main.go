@@ -194,26 +194,25 @@ func (m *Gha) Config(
 	prefix string,
 ) *dagger.Directory {
 	dir := dag.Directory()
-	for i, t := range m.PushTriggers {
-		filename := fmt.Sprintf("%spush-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	for _, t := range m.PushTriggers {
+		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
 	}
-	for i, t := range m.PullRequestTriggers {
-		filename := fmt.Sprintf("%spr-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	for _, t := range m.PullRequestTriggers {
+		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
 	}
-	for i, t := range m.DispatchTriggers {
-		filename := fmt.Sprintf("%sdispatch-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	for _, t := range m.DispatchTriggers {
+		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
 	}
-	for i, t := range m.IssueCommentTriggers {
-		filename := fmt.Sprintf("%sissue-comment-%d.yml", prefix, i+1)
-		dir = dir.WithDirectory(".", t.Config(filename, m.Settings.AsJson))
+	for _, t := range m.IssueCommentTriggers {
+		dir = dir.WithDirectory(".", t.Config(t.Pipeline.workflowFilename(), m.Settings.AsJson))
 	}
 	return dir
 }
 
 func (m *Gha) pipeline(
+	// The pipeline name
+	//  This is used when generating the workflow config file
+	name string,
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -223,6 +222,7 @@ func (m *Gha) pipeline(
 	sparseCheckout []string,
 ) Pipeline {
 	p := Pipeline{
+		Name:           name,
 		Command:        command,
 		Module:         module,
 		Secrets:        secrets,
@@ -238,6 +238,8 @@ func (m *Gha) pipeline(
 // A Dagger pipeline to be called from a Github Actions configuration
 type Pipeline struct {
 	// +private
+	Name string
+	// +private
 	Module string
 	// +private
 	Command string
@@ -247,10 +249,6 @@ type Pipeline struct {
 	SparseCheckout []string
 	// +private
 	Settings Settings
-}
-
-func (p *Pipeline) Name() string {
-	return strings.SplitN(p.Command, " ", 2)[0]
 }
 
 func (p *Pipeline) checkSecretNames() error {
@@ -313,10 +311,10 @@ func (p *Pipeline) asWorkflow() Workflow {
 		steps = append(steps, p.stopEngineStep())
 	}
 	return Workflow{
-		Name: p.Command,
+		Name: p.Name,
 		On:   WorkflowTriggers{}, // Triggers intentionally left blank
 		Jobs: map[string]Job{
-			"dagger": Job{
+			p.jobID(): Job{
 				RunsOn: p.Settings.Runner,
 				Steps:  steps,
 				Outputs: map[string]string{
@@ -326,6 +324,40 @@ func (p *Pipeline) asWorkflow() Workflow {
 			},
 		},
 	}
+}
+
+func (p *Pipeline) workflowFilename() string {
+	var name string
+	// Convert to lowercase
+	name = strings.ToLower(p.Name)
+	// Replace spaces and special characters with hyphens
+	re := regexp.MustCompile(`[^a-z0-9]+`)
+	name = re.ReplaceAllString(name, "-")
+	// Trim leading and trailing hyphens
+	name = strings.Trim(name, "-")
+	// Add the .yml extension
+	return name + ".yml"
+}
+
+func (p *Pipeline) jobID() string {
+	// Define regex to match allowed characters
+	allowedChars := regexp.MustCompile(`[^a-zA-Z0-9_-]`)
+	startWithLetterOrUnderscore := regexp.MustCompile(`^[^a-zA-Z_]`)
+
+	id := strings.ReplaceAll(p.Name, " ", "-")
+	// Remove all invalid characters
+	id = allowedChars.ReplaceAllString(id, "")
+
+	// Ensure it starts with a letter or underscore
+	if startWithLetterOrUnderscore.MatchString(id) {
+		id = "_" + id
+	}
+
+	// Truncate if longer than 100 characters
+	if len(id) > 99 {
+		id = id[:99]
+	}
+	return id
 }
 
 func (p *Pipeline) checkoutStep() JobStep {

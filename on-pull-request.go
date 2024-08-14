@@ -6,6 +6,8 @@ import "github.com/shykes/gha/internal/dagger"
 
 // Add a trigger to execute a Dagger pipeline on a pull request
 func (m *Gha) OnPullRequest(
+	// Pipeline name
+	name string,
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -37,7 +39,7 @@ func (m *Gha) OnPullRequest(
 			Branches: branches,
 			Types:    types,
 		},
-		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
+		Pipeline: m.pipeline(name, command, module, runner, secrets, sparseCheckout),
 	})
 	return m
 }

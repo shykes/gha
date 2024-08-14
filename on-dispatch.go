@@ -6,6 +6,8 @@ import "github.com/shykes/gha/internal/dagger"
 
 // Add a trigger to execute a Dagger pipeline on a workflow dispatch event
 func (m *Gha) OnDispatch(
+	// Pipeline name
+	name string,
 	// The Dagger command to execute
 	// Example 'build --source=.'
 	command string,
@@ -26,7 +28,7 @@ func (m *Gha) OnDispatch(
 	sparseCheckout []string,
 ) *Gha {
 	m.DispatchTriggers = append(m.DispatchTriggers, DispatchTrigger{
-		Pipeline: m.pipeline(command, module, runner, secrets, sparseCheckout),
+		Pipeline: m.pipeline(name, command, module, runner, secrets, sparseCheckout),
 		Event: WorkflowDispatchEvent{
 			Inputs: nil, // FIXME: add inputs, could be pretty dope
 		},
