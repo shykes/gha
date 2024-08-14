@@ -42,6 +42,9 @@ jobs:
 
                 set -x
 
+                GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
+                echo '$GITHUB_OUTPUT = ' "$GITHUB_OUTPUT"
+
                 # Ensure the command is provided as an environment variable
                 if [ -z "$COMMAND" ]; then
                   echo "Error: Please set the COMMAND environment variable."
