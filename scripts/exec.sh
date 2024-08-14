@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -x
-
 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
-echo '$GITHUB_OUTPUT = ' "$GITHUB_OUTPUT"
+GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
 
 # Ensure the command is provided as an environment variable
 if [ -z "$COMMAND" ]; then
@@ -38,4 +36,45 @@ tmp=$(mktemp -d)
     echo 'stderr<<EOF'
     cat "$tmp/stderr.txt"
     echo 'EOF'
-} > "${GITHUB_OUTPUT:=github-output.txt}"
+} > "${GITHUB_OUTPUT}"
+
+{
+cat <<'---'
+## Dagger version
+
+```
+---
+dagger version
+
+cat <<'---'
+```
+
+## Pipeline command
+
+```bash
+---
+echo "DAGGER_MODULE=$DAGGER_MODULE \"
+echo " $COMMAND"
+
+cat <<'---'
+```
+
+## Pipeline result
+
+```
+---
+cat $tmp/stdout.txt
+
+cat <<'---'
+```
+
+## Pipeline logs
+
+```
+---
+cat $tmp/stderr.txt
+
+cat <<'---'
+```
+---
+} >"${GITHUB_STEP_SUMMARY}"
