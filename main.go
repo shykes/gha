@@ -9,7 +9,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/shykes/gha/internal/dagger"
@@ -349,4 +351,15 @@ func (p *Pipeline) bashStep(filename string, env map[string]string) JobStep {
 		Run:   script,
 		Env:   env,
 	}
+}
+
+// check if the secret name contains only alphanumeric characters and underscores.
+func validateSecretNames(secrets []string) error {
+	validName := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	for _, secretName := range secrets {
+		if !validName.MatchString(secretName) {
+			return errors.New("invalid secret name: '" + secretName + "' must contain only alphanumeric characters and underscores")
+		}
+	}
+	return nil
 }
