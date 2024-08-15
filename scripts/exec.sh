@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile --norc -e -o pipefail
 
 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
@@ -22,7 +22,7 @@ tmp=$(mktemp -d)
     tee stderr.txt < stderr.fifo >&2 &
 
     # Run the command, capturing stdout and stderr in the FIFOs
-    ( eval "$COMMAND" ) > stdout.fifo 2> stderr.fifo
+    ( eval "$COMMAND" || true ) > stdout.fifo 2> stderr.fifo
 
     # Wait for all background jobs to finish
     wait
