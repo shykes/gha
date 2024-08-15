@@ -10,11 +10,12 @@ type Examples struct{}
 func (m *Examples) Gha_Secrets() *dagger.Directory {
 	return dag.
 		Gha().
-		OnDispatch(
+		WithPipeline(
 			"deploy docs",
 			"deploy-docs --source=. --password env:$DOCS_SERVER_PASSWORD",
-			dagger.GhaOnDispatchOpts{
-				Secrets: []string{"DOCS_SERVER_PASSWORD"},
+			dagger.GhaWithPipelineOpts{
+				Dispatch: true,
+				Secrets:  []string{"DOCS_SERVER_PASSWORD"},
 			}).
 		Config()
 }
@@ -23,7 +24,8 @@ func (m *Examples) Gha_Secrets() *dagger.Directory {
 func (m *Examples) Gha_GithubContext() *dagger.Directory {
 	return dag.
 		Gha().
-		OnPush("lint all branches", "lint --source=${GITHUB_REPOSITORY_URL}#${GITHUB_REF}").
+		WithPipeline("lint all branches", "lint --source=${GITHUB_REPOSITORY_URL}#${GITHUB_REF}").
+		OnPush("lint all branches").
 		Config()
 }
 
@@ -31,10 +33,10 @@ func (m *Examples) Gha_GithubContext() *dagger.Directory {
 func (m *Examples) Gha_CustomModule() *dagger.Directory {
 	return dag.
 		Gha().
-		OnDispatch(
+		WithPipeline(
 			"say hello",
 			"hello --name=$GITHUB_REPOSITORY_OWNER",
-			dagger.GhaOnDispatchOpts{
+			dagger.GhaWithPipelineOpts{
 				Module: "github.com/shykes/hello",
 			}).
 		Config()
@@ -44,14 +46,17 @@ func (m *Examples) Gha_CustomModule() *dagger.Directory {
 func (m *Examples) GhaOnPush() *dagger.Directory {
 	return dag.
 		Gha().
-		OnPush(
+		WithPipeline(
 			"build and publish app container from main",
 			"publish --source=. --registry-user=$REGISTRY_USER --registry-password=$REGISTRY_PASSWORD",
-			dagger.GhaOnPushOpts{
-				Branches: []string{"main"},
+			dagger.GhaWithPipelineOpts{
 				Secrets: []string{
 					"REGISTRY_USER", "REGISTRY_PASSWORD",
 				},
+			}).
+		OnPush("build and publish app container from main",
+			dagger.GhaOnPushOpts{
+				Branches: []string{"main"},
 			}).
 		Config()
 }
@@ -60,6 +65,7 @@ func (m *Examples) GhaOnPush() *dagger.Directory {
 func (m *Examples) GhaOnPullRequest() *dagger.Directory {
 	return dag.
 		Gha().
-		OnPullRequest("test pull requests", "test --all --source=.").
+		WithPipeline("test pull requests", "test --all --source=.").
+		OnPullRequest("test pull requests").
 		Config()
 }

@@ -6,7 +6,9 @@ import (
 
 type Github struct{}
 
-// Returns a container that echoes whatever string argument is provided
+// Generate our CI config
+// Export to .github at the repository root
+// Example: 'dagger call -m .github -o .github'
 func (m *Github) Generate() *dagger.Directory {
 	return dag.
 		Gha().
