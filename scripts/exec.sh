@@ -20,13 +20,12 @@ tmp=$(mktemp -d)
     # Set up tee to capture and display stdout and stderr
     tee stdout.txt < stdout.fifo &
     tee stderr.txt < stderr.fifo >&2 &
-
-    # Run the command, capturing stdout and stderr in the FIFOs
-    ( eval "$COMMAND" || true ) > stdout.fifo 2> stderr.fifo
-
-    # Wait for all background jobs to finish
-    wait
 )
+
+# Run the command, capturing stdout and stderr in the FIFOs
+( eval "$COMMAND" || true ) > $tmp/stdout.fifo 2> $tmp/stderr.fifo
+# Wait for all background jobs to finish
+wait
 
 # Expose the outputs as GitHub Actions step outputs directly from the files
 # Multi-line outputs are handled with the '<<EOF' syntax
@@ -62,7 +61,7 @@ echo " $COMMAND"
 cat <<'.'
 ```
 
-## Pipeline result
+## Pipeline output
 
 ```
 .

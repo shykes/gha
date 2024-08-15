@@ -33,11 +33,11 @@ func (m *Github) Generate() *dagger.Directory {
 				Module:   "github.com/shykes/core",
 				Dispatch: true,
 			}).
-		// Trigger 'Demo pipeline 1' on:
+		// Trigger 'Demo pipeline 1' and 'Demo pipeline 2' on:
 		//  - push to main branch
 		//  - push to any tag
 		OnPush(
-			[]string{"Demo pipeline 1"},
+			[]string{"Demo pipeline 1", "Demo pipeline 2"},
 			dagger.GhaOnPushOpts{
 				Branches: []string{"main"},
 				Tags:     []string{"*"},
