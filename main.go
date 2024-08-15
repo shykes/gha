@@ -122,6 +122,9 @@ func (m *Gha) WithPipeline(
 	// Allow this pipeline to be manually "dispatched"
 	// +optional
 	dispatch bool,
+	// Enable lfs on git checkout
+	// +optional
+	lfs bool,
 ) *Gha {
 	p := &Pipeline{
 		Name:           name,
@@ -129,6 +132,7 @@ func (m *Gha) WithPipeline(
 		Module:         module,
 		Secrets:        secrets,
 		SparseCheckout: sparseCheckout,
+		LFS:            lfs,
 		Settings:       m.Settings,
 	}
 	if dispatch {
@@ -239,6 +243,8 @@ type Pipeline struct {
 	// +private
 	SparseCheckout []string
 	// +private
+	LFS bool
+	// +private
 	Settings Settings
 	// +private
 	Triggers WorkflowTriggers
@@ -344,6 +350,7 @@ func (p *Pipeline) checkoutStep() JobStep {
 	step := JobStep{
 		Name: "Checkout",
 		Uses: "actions/checkout@v4",
+		With: map[string]string{},
 	}
 	if p.SparseCheckout != nil {
 		// Include common dagger paths in the checkout, to make
@@ -351,9 +358,10 @@ func (p *Pipeline) checkoutStep() JobStep {
 		// FIXME: this is only a guess, we need the 'source' field of dagger.json
 		//  to be sure.
 		sparseCheckout := append(p.SparseCheckout, "dagger.json", ".dagger", "dagger", "ci")
-		step.With = map[string]string{
-			"sparse-checkout": strings.Join(sparseCheckout, "\n"),
-		}
+		step.With["sparse-checkout"] = strings.Join(sparseCheckout, "\n")
+	}
+	if p.LFS {
+		step.With["lfs"] = "true"
 	}
 	return step
 }
