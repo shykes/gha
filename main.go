@@ -119,9 +119,13 @@ func (m *Gha) WithPipeline(
 	// Example: ["src", "tests", "Dockerfile"]
 	// +optional
 	sparseCheckout []string,
-	// Allow this pipeline to be manually "dispatched"
+	// (DEPRECATED) allow this pipeline to be manually "dispatched"
 	// +optional
+	// +deprecated
 	dispatch bool,
+	// Disable manual "dispatch" of this pipeline
+	// +optional
+	noDispatch bool,
 	// Enable lfs on git checkout
 	// +optional
 	lfs bool,
@@ -135,7 +139,7 @@ func (m *Gha) WithPipeline(
 		LFS:            lfs,
 		Settings:       m.Settings,
 	}
-	if dispatch {
+	if !noDispatch {
 		p.Triggers.WorkflowDispatch = &WorkflowDispatchEvent{}
 	}
 	if runner != "" {
