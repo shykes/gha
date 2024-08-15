@@ -147,28 +147,30 @@ func (m *Gha) WithPipeline(
 
 // Add a trigger to execute a Dagger pipeline on an issue comment
 func (m *Gha) OnIssueComment(
-	// Name of the pipeline to trigger
-	pipeline string,
+	// Pipelines to trigger
+	pipelines []string,
 	// Run only for certain types of issue comment events
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#issue_comment
 	// +optional
 	types []string,
 ) (*Gha, error) {
-	p := m.pipeline(pipeline)
-	if p == nil {
-		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	for _, name := range pipelines {
+		p := m.pipeline(name)
+		if p == nil {
+			return m, fmt.Errorf("pipeline not found: %s", name)
+		}
+		if p.Triggers.IssueComment == nil {
+			p.Triggers.IssueComment = &IssueCommentEvent{}
+		}
+		p.Triggers.IssueComment.Types = append(p.Triggers.IssueComment.Types, types...)
 	}
-	if p.Triggers.IssueComment == nil {
-		p.Triggers.IssueComment = &IssueCommentEvent{}
-	}
-	p.Triggers.IssueComment.Types = append(p.Triggers.IssueComment.Types, types...)
 	return m, nil
 }
 
 // Add a trigger to execute a Dagger pipeline on a pull request
 func (m *Gha) OnPullRequest(
-	// Name of the pipeline to trigger
-	pipeline string,
+	// Pipelines to trigger
+	pipelines []string,
 	// Run only for certain types of pull request events
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
 	// +optional
@@ -180,23 +182,25 @@ func (m *Gha) OnPullRequest(
 	// +optional
 	paths []string,
 ) (*Gha, error) {
-	p := m.pipeline(pipeline)
-	if p == nil {
-		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	for _, name := range pipelines {
+		p := m.pipeline(name)
+		if p == nil {
+			return m, fmt.Errorf("pipeline not found: %s", name)
+		}
+		if p.Triggers.PullRequest == nil {
+			p.Triggers.PullRequest = &PullRequestEvent{}
+		}
+		p.Triggers.PullRequest.Types = append(p.Triggers.PullRequest.Types, types...)
+		p.Triggers.PullRequest.Branches = append(p.Triggers.PullRequest.Branches, branches...)
+		p.Triggers.PullRequest.Paths = append(p.Triggers.PullRequest.Paths, paths...)
 	}
-	if p.Triggers.PullRequest == nil {
-		p.Triggers.PullRequest = &PullRequestEvent{}
-	}
-	p.Triggers.PullRequest.Types = append(p.Triggers.PullRequest.Types, types...)
-	p.Triggers.PullRequest.Branches = append(p.Triggers.PullRequest.Branches, branches...)
-	p.Triggers.PullRequest.Paths = append(p.Triggers.PullRequest.Paths, paths...)
 	return m, nil
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
 func (m *Gha) OnPush(
-	// Name of the pipeline to trigger
-	pipeline string,
+	// Pipelines to trigger
+	pipelines []string,
 	// Run only on push to specific branches
 	// +optional
 	branches []string,
@@ -207,16 +211,18 @@ func (m *Gha) OnPush(
 	// +optional
 	paths []string,
 ) (*Gha, error) {
-	p := m.pipeline(pipeline)
-	if p == nil {
-		return m, fmt.Errorf("pipeline not found: %s", pipeline)
+	for _, name := range pipelines {
+		p := m.pipeline(name)
+		if p == nil {
+			return m, fmt.Errorf("pipeline not found: %s", name)
+		}
+		if p.Triggers.Push == nil {
+			p.Triggers.Push = &PushEvent{}
+		}
+		p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
+		p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
+		p.Triggers.Push.Paths = append(p.Triggers.Push.Paths, paths...)
 	}
-	if p.Triggers.Push == nil {
-		p.Triggers.Push = &PushEvent{}
-	}
-	p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
-	p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
-	p.Triggers.Push.Paths = append(p.Triggers.Push.Paths, paths...)
 	return m, nil
 }
 

@@ -25,7 +25,7 @@ func (m *Examples) Gha_GithubContext() *dagger.Directory {
 	return dag.
 		Gha().
 		WithPipeline("lint all branches", "lint --source=${GITHUB_REPOSITORY_URL}#${GITHUB_REF}").
-		OnPush("lint all branches").
+		OnPush([]string{"lint all branches"}).
 		Config()
 }
 
@@ -54,7 +54,7 @@ func (m *Examples) GhaOnPush() *dagger.Directory {
 					"REGISTRY_USER", "REGISTRY_PASSWORD",
 				},
 			}).
-		OnPush("build and publish app container from main",
+		OnPush([]string{"build and publish app container from main"},
 			dagger.GhaOnPushOpts{
 				Branches: []string{"main"},
 			}).
@@ -66,6 +66,6 @@ func (m *Examples) GhaOnPullRequest() *dagger.Directory {
 	return dag.
 		Gha().
 		WithPipeline("test pull requests", "test --all --source=.").
-		OnPullRequest("test pull requests").
+		OnPullRequest([]string{"test pull requests"}).
 		Config()
 }
