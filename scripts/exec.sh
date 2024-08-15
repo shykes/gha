@@ -23,7 +23,10 @@ tmp=$(mktemp -d)
 )
 
 # Run the command, capturing stdout and stderr in the FIFOs
-( eval "$COMMAND" || true ) > $tmp/stdout.fifo 2> $tmp/stderr.fifo
+set +e
+eval "$COMMAND" > $tmp/stdout.fifo 2> $tmp/stderr.fifo
+EXIT_CODE=$?
+set -e
 # Wait for all background jobs to finish
 wait
 
@@ -83,3 +86,5 @@ cat <<'.'
 .
 
 } >"${GITHUB_STEP_SUMMARY}"
+
+exit $EXIT_CODE
