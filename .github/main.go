@@ -11,7 +11,9 @@ type Github struct{}
 // Example: 'dagger call -m .github -o .github'
 func (m *Github) Generate() *dagger.Directory {
 	return dag.
-		Gha().
+		Gha(dagger.GhaOpts{
+			DaggerVersion: "v0.12.4",
+		}).
 		WithPipeline(
 			"Demo pipeline 1",
 			"git --url=https://github.com/$GITHUB_REPOSITORY branch --name=$GITHUB_REF tree glob --pattern=*",
