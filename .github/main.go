@@ -15,6 +15,13 @@ func (m *Github) Generate() *dagger.Directory {
 			DaggerVersion: "v0.12.4",
 		}).
 		WithPipeline(
+			"Deploy docs",
+			"deploy-docs --token $NETLIFY_TOKEN",
+			dagger.GhaWithPipelineOpts{
+				Secrets: []string{"NETLIFY_TOKEN"},
+			},
+		).
+		WithPipeline(
 			"Demo pipeline 1",
 			"git --url=https://github.com/$GITHUB_REPOSITORY branch --name=$GITHUB_REF tree glob --pattern=*",
 			dagger.GhaWithPipelineOpts{
