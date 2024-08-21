@@ -47,7 +47,7 @@ jobs:
                 # The install.sh script creates path ${prefix_dir}/bin
                 curl -fsS https://dl.dagger.io/dagger/install.sh | BIN_DIR=${prefix_dir}/bin sh
               env:
-                DAGGER_VERSION: v0.12.4
+                DAGGER_VERSION: latest
               shell: bash
             - name: scripts/warm-engine.sh
               id: warm-engine

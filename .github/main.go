@@ -12,7 +12,7 @@ type Github struct{}
 func (m *Github) Generate() *dagger.Directory {
 	return dag.
 		Gha(dagger.GhaOpts{
-			DaggerVersion: "v0.12.4",
+			DaggerVersion: "latest",
 		}).
 		WithPipeline(
 			"Deploy docs",
