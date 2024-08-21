@@ -328,6 +328,8 @@ func (p *Pipeline) asWorkflow() Workflow {
 		On:   p.Triggers,
 		Jobs: map[string]Job{
 			p.jobID(): Job{
+				// The job name is used by the "required checks feature" in branch protection rules
+				Name:   p.Name,
 				RunsOn: p.Settings.Runner,
 				Steps:  steps,
 				Outputs: map[string]string{

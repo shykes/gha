@@ -11,6 +11,7 @@ name: Demo pipeline 1
 jobs:
     dagger:
         runs-on: ubuntu-latest
+        name: Demo pipeline 1
         steps:
             - name: Checkout
               uses: actions/checkout@v4

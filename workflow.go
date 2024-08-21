@@ -166,6 +166,7 @@ type DispatchInput struct {
 
 type Job struct {
 	RunsOn         string            `json:"runs-on" yaml:"runs-on"`
+	Name           string            `json:"name" yaml:"name"`
 	Needs          []string          `json:"needs,omitempty" yaml:"needs,omitempty"`
 	Steps          []JobStep         `json:"steps" yaml:"steps"`
 	Env            map[string]string `json:"env,omitempty" yaml:"env,omitempty"`

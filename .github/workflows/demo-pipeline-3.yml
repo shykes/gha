@@ -5,6 +5,7 @@ name: Demo pipeline 3
 jobs:
     dagger:
         runs-on: ubuntu-latest
+        name: Demo pipeline 3
         steps:
             - name: Checkout
               uses: actions/checkout@v4
