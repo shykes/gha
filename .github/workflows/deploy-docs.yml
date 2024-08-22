@@ -1,6 +1,9 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
 name: Deploy docs
 "on":
+    push:
+        tags:
+            - deploy-docs
     workflow_dispatch: {}
 jobs:
     dagger:

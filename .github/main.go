@@ -18,14 +18,18 @@ func (m *Github) Generate() *dagger.Directory {
 			"Deploy docs",
 			"deploy-docs --token $NETLIFY_TOKEN",
 			dagger.GhaWithPipelineOpts{
-				Secrets: []string{"NETLIFY_TOKEN"},
+				Secrets:    []string{"NETLIFY_TOKEN"},
+				OnPushTags: []string{"deploy-docs"},
 			},
 		).
 		WithPipeline(
 			"Demo pipeline 1",
 			"git --url=https://github.com/$GITHUB_REPOSITORY branch --name=$GITHUB_REF tree glob --pattern=*",
 			dagger.GhaWithPipelineOpts{
-				Module: "github.com/shykes/core",
+				Module:         "github.com/shykes/core",
+				OnPullRequest:  true,
+				OnPushBranches: []string{"main"},
+				OnPushTags:     []string{"*"},
 			}).
 		WithPipeline(
 			"Demo pipeline 2",
@@ -33,6 +37,9 @@ func (m *Github) Generate() *dagger.Directory {
 			dagger.GhaWithPipelineOpts{
 				SparseCheckout: []string{"misc", "scripts"},
 				Module:         "github.com/shykes/core",
+				OnPullRequest:  true,
+				OnPushBranches: []string{"main"},
+				OnPushTags:     []string{"*"},
 			},
 		).
 		WithPipeline(
@@ -42,20 +49,6 @@ func (m *Github) Generate() *dagger.Directory {
 				Module:   "github.com/shykes/core",
 				Dispatch: true,
 			}).
-		// Trigger 'Demo pipeline 1' and 'Demo pipeline 2' on:
-		//  - push to main branch
-		//  - push to any tag
-		OnPush(
-			[]string{"Demo pipeline 1", "Demo pipeline 2"},
-			dagger.GhaOnPushOpts{
-				Branches: []string{"main"},
-				Tags:     []string{"*"},
-			}).
-		// Trigger 'Demo pipeline 1' and 'Demo pipeline 2' on pull request
-		OnPullRequest([]string{
-			"Demo pipeline 1",
-			"Demo pipeline 2",
-		}).
 		Config().
 		Directory(".github")
 }

@@ -74,7 +74,8 @@ type Settings struct {
 	Runner string
 }
 
-func (m *Gha) Check(ctx context.Context, repo *dagger.Directory) (*Gha, error) {
+// Validate a Github Actions configuration (best effort)
+func (m *Gha) Validate(ctx context.Context, repo *dagger.Directory) (*Gha, error) {
 	for _, p := range m.Pipelines {
 		if err := p.Check(ctx, repo); err != nil {
 			return m, err
@@ -83,7 +84,7 @@ func (m *Gha) Check(ctx context.Context, repo *dagger.Directory) (*Gha, error) {
 	return m, nil
 }
 
-// Generate a github config directory, usable as an overlay on the repository root
+// Export the configuration to a .github directory
 func (m *Gha) Config(
 	// Prefix to use for generated workflow filenames
 	// +optional
@@ -96,8 +97,7 @@ func (m *Gha) Config(
 	return dir
 }
 
-// Register a new dagger pipeline, with no triggers
-// Use the pipeline name to attach triggers in follow-up calls
+// Add a pipeline
 func (m *Gha) WithPipeline(
 	// Pipeline name
 	name string,
@@ -129,6 +129,73 @@ func (m *Gha) WithPipeline(
 	// Enable lfs on git checkout
 	// +optional
 	lfs bool,
+	// Run the pipeline on any issue comment activity
+	// +optional
+	onIssueComment bool,
+	// +optional
+	onIssueCommentCreated bool,
+	// +optional
+	onIssueCommentEdited bool,
+	// +optional
+	onIssueCommentDeleted bool,
+	// Run the pipeline on any pull request activity
+	// +optional
+	onPullRequest bool,
+	// +optional
+	onPullRequestBranches []string,
+	// +optional
+	onPullRequestPaths []string,
+	// +optional
+	onPullRequestAssigned bool,
+	// +optional
+	onPullRequestUnassigned bool,
+	// +optional
+	onPullRequestLabeled bool,
+	// +optional
+	onPullRequestUnlabeled bool,
+	// +optional
+	onPullRequestOpened bool,
+	// +optional
+	onPullRequestEdited bool,
+	// +optional
+	onPullRequestClosed bool,
+	// +optional
+	onPullRequestReopened bool,
+	// +optional
+	onPullRequestSynchronize bool,
+	// +optional
+	onPullRequestConverted_to_draft bool,
+	// +optional
+	onPullRequestLocked bool,
+	// +optional
+	onPullRequestUnlocked bool,
+	// +optional
+	onPullRequestEnqueued bool,
+	// +optional
+	onPullRequestDequeued bool,
+	// +optional
+	onPullRequestMilestoned bool,
+	// +optional
+	onPullRequestDemilestoned bool,
+	// +optional
+	onPullRequestReadyForReview bool,
+	// +optional
+	onPullRequestReviewRequested bool,
+	// +optional
+	onPullRequestReviewRequestRemoved bool,
+	// +optional
+	onPullRequestAutoMergeEnabled bool,
+	// +optional
+	onPullRequestAutoMergeDisabled bool,
+	// Run the pipeline on any git push
+	// +optional
+	onPush bool,
+	// Run the pipeline on git push to the specified tags
+	// +optional
+	onPushTags []string,
+	// Run the pipeline on git push to the specified branches
+	// +optional
+	onPushBranches []string,
 ) *Gha {
 	p := &Pipeline{
 		Name:           name,
@@ -145,36 +212,118 @@ func (m *Gha) WithPipeline(
 	if runner != "" {
 		p.Settings.Runner = runner
 	}
+	if onIssueComment {
+		p.OnIssueComment(nil)
+	}
+	if onIssueCommentCreated {
+		p.OnIssueComment([]string{"created"})
+	}
+	if onIssueCommentDeleted {
+		p.OnIssueComment([]string{"deleted"})
+	}
+	if onIssueCommentEdited {
+		p.OnIssueComment([]string{"edited"})
+	}
+	if onPullRequest {
+		p.OnPullRequest(nil, nil, nil)
+	}
+	if onPullRequestBranches != nil {
+		p.OnPullRequest(nil, onPullRequestBranches, nil)
+	}
+	if onPullRequestPaths != nil {
+		p.OnPullRequest([]string{"paths"}, nil, onPullRequestPaths)
+	}
+	if onPullRequestAssigned {
+		p.OnPullRequest([]string{"assigned"}, nil, nil)
+	}
+	if onPullRequestUnassigned {
+		p.OnPullRequest([]string{"unassigned"}, nil, nil)
+	}
+	if onPullRequestLabeled {
+		p.OnPullRequest([]string{"labeled"}, nil, nil)
+	}
+	if onPullRequestUnlabeled {
+		p.OnPullRequest([]string{"unlabeled"}, nil, nil)
+	}
+	if onPullRequestOpened {
+		p.OnPullRequest([]string{"opened"}, nil, nil)
+	}
+	if onPullRequestEdited {
+		p.OnPullRequest([]string{"edited"}, nil, nil)
+	}
+	if onPullRequestClosed {
+		p.OnPullRequest([]string{"closed"}, nil, nil)
+	}
+	if onPullRequestReopened {
+		p.OnPullRequest([]string{"reopened"}, nil, nil)
+	}
+	if onPullRequestSynchronize {
+		p.OnPullRequest([]string{"synchronize"}, nil, nil)
+	}
+	if onPullRequestConverted_to_draft {
+		p.OnPullRequest([]string{"converted-to-draft"}, nil, nil)
+	}
+	if onPullRequestLocked {
+		p.OnPullRequest([]string{"locked"}, nil, nil)
+	}
+	if onPullRequestUnlocked {
+		p.OnPullRequest([]string{"unlocked"}, nil, nil)
+	}
+	if onPullRequestEnqueued {
+		p.OnPullRequest([]string{"enqueued"}, nil, nil)
+	}
+	if onPullRequestDequeued {
+		p.OnPullRequest([]string{"dequeued"}, nil, nil)
+	}
+	if onPullRequestMilestoned {
+		p.OnPullRequest([]string{"milestoned"}, nil, nil)
+	}
+	if onPullRequestDemilestoned {
+		p.OnPullRequest([]string{"demilestoned"}, nil, nil)
+	}
+	if onPullRequestReadyForReview {
+		p.OnPullRequest([]string{"ready-for-review"}, nil, nil)
+	}
+	if onPullRequestReviewRequested {
+		p.OnPullRequest([]string{"review-requested"}, nil, nil)
+	}
+	if onPullRequestReviewRequestRemoved {
+		p.OnPullRequest([]string{"review-request-removed"}, nil, nil)
+	}
+	if onPullRequestAutoMergeEnabled {
+		p.OnPullRequest([]string{"auto-merge-enabled"}, nil, nil)
+	}
+	if onPullRequestAutoMergeDisabled {
+		p.OnPullRequest([]string{"auto-merge-disabled"}, nil, nil)
+	}
+	if onPush {
+		p.OnPush(nil, nil)
+	}
+	if onPushBranches != nil {
+		p.OnPush(onPushBranches, nil)
+	}
+	if onPushTags != nil {
+		p.OnPush(nil, onPushTags)
+	}
 	m.Pipelines = append(m.Pipelines, p)
 	return m
 }
 
-// Add a trigger to execute a Dagger pipeline on an issue comment
-func (m *Gha) OnIssueComment(
-	// Pipelines to trigger
-	pipelines []string,
+func (p *Pipeline) OnIssueComment(
 	// Run only for certain types of issue comment events
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#issue_comment
 	// +optional
 	types []string,
-) (*Gha, error) {
-	for _, name := range pipelines {
-		p := m.pipeline(name)
-		if p == nil {
-			return m, fmt.Errorf("pipeline not found: %s", name)
-		}
-		if p.Triggers.IssueComment == nil {
-			p.Triggers.IssueComment = &IssueCommentEvent{}
-		}
-		p.Triggers.IssueComment.Types = append(p.Triggers.IssueComment.Types, types...)
+) *Pipeline {
+	if p.Triggers.IssueComment == nil {
+		p.Triggers.IssueComment = &IssueCommentEvent{}
 	}
-	return m, nil
+	p.Triggers.IssueComment.Types = append(p.Triggers.IssueComment.Types, types...)
+	return p
 }
 
 // Add a trigger to execute a Dagger pipeline on a pull request
-func (m *Gha) OnPullRequest(
-	// Pipelines to trigger
-	pipelines []string,
+func (p *Pipeline) OnPullRequest(
 	// Run only for certain types of pull request events
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
 	// +optional
@@ -185,49 +334,31 @@ func (m *Gha) OnPullRequest(
 	// Run only for pull requests that target specific paths
 	// +optional
 	paths []string,
-) (*Gha, error) {
-	for _, name := range pipelines {
-		p := m.pipeline(name)
-		if p == nil {
-			return m, fmt.Errorf("pipeline not found: %s", name)
-		}
-		if p.Triggers.PullRequest == nil {
-			p.Triggers.PullRequest = &PullRequestEvent{}
-		}
-		p.Triggers.PullRequest.Types = append(p.Triggers.PullRequest.Types, types...)
-		p.Triggers.PullRequest.Branches = append(p.Triggers.PullRequest.Branches, branches...)
-		p.Triggers.PullRequest.Paths = append(p.Triggers.PullRequest.Paths, paths...)
+) *Pipeline {
+	if p.Triggers.PullRequest == nil {
+		p.Triggers.PullRequest = &PullRequestEvent{}
 	}
-	return m, nil
+	p.Triggers.PullRequest.Types = append(p.Triggers.PullRequest.Types, types...)
+	p.Triggers.PullRequest.Branches = append(p.Triggers.PullRequest.Branches, branches...)
+	p.Triggers.PullRequest.Paths = append(p.Triggers.PullRequest.Paths, paths...)
+	return p
 }
 
 // Add a trigger to execute a Dagger pipeline on a git push
-func (m *Gha) OnPush(
-	// Pipelines to trigger
-	pipelines []string,
+func (p *Pipeline) OnPush(
 	// Run only on push to specific branches
 	// +optional
 	branches []string,
 	// Run only on push to specific tags
 	// +optional
 	tags []string,
-	// Run only on push to specific paths
-	// +optional
-	paths []string,
-) (*Gha, error) {
-	for _, name := range pipelines {
-		p := m.pipeline(name)
-		if p == nil {
-			return m, fmt.Errorf("pipeline not found: %s", name)
-		}
-		if p.Triggers.Push == nil {
-			p.Triggers.Push = &PushEvent{}
-		}
-		p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
-		p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
-		p.Triggers.Push.Paths = append(p.Triggers.Push.Paths, paths...)
+) *Pipeline {
+	if p.Triggers.Push == nil {
+		p.Triggers.Push = &PushEvent{}
 	}
-	return m, nil
+	p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
+	p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
+	return p
 }
 
 // Lookup a pipeline
