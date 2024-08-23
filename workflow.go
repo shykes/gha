@@ -95,10 +95,11 @@ var (
 )
 
 type Workflow struct {
-	Name string            `json:"name,omitempty" yaml:"name,omitempty"`
-	On   WorkflowTriggers  `json:"on" yaml:"on"`
-	Jobs map[string]Job    `json:"jobs" yaml:"jobs"`
-	Env  map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Name        string               `json:"name,omitempty" yaml:"name,omitempty"`
+	On          WorkflowTriggers     `json:"on" yaml:"on"`
+	Concurrency *WorkflowConcurrency `json:"concurrency,omitempty" yaml:"concurrency,omitempty"`
+	Jobs        map[string]Job       `json:"jobs" yaml:"jobs"`
+	Env         map[string]string    `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
 // Generate an overlay config directory for this workflow
@@ -123,6 +124,11 @@ func (w Workflow) Config(
 	return dag.
 		Directory().
 		WithNewFile(".github/workflows/"+filename, genHeader+"\n"+string(contents))
+}
+
+type WorkflowConcurrency struct {
+	Group            string `json:"group,omitempty" yaml:"group,omitempty"`
+	CancelInProgress bool   `json:"group,cancel-in-progress" yaml:"cancel-in-progress,omitempty"`
 }
 
 type WorkflowTriggers struct {
