@@ -72,6 +72,8 @@ type Settings struct {
 	AsJson bool
 	// +private
 	Runner string
+	// +private
+	PullRequestConcurrency string
 }
 
 // Validate a Github Actions configuration (best effort)
@@ -129,6 +131,9 @@ func (m *Gha) WithPipeline(
 	// Enable lfs on git checkout
 	// +optional
 	lfs bool,
+	// The maximum number of minutes to run the pipeline before killing the process
+	// +optional
+	timeoutMinutes int,
 	// Run the pipeline on any issue comment activity
 	// +optional
 	onIssueComment bool,
@@ -141,6 +146,15 @@ func (m *Gha) WithPipeline(
 	// Run the pipeline on any pull request activity
 	// +optional
 	onPullRequest bool,
+	// Configure this pipeline's concurrency for each PR.
+	// This is triggered when the pipeline is scheduled concurrently on the same PR.
+	//   - allow: all instances are allowed to run concurrently
+	//   - queue: new instances are queued, and run sequentially
+	//   - preempt: new instances run immediately, older ones are canceled
+	// Possible values: "allow", "preempt", "queue"
+	// +optional
+	// +default="allow"
+	pullRequestConcurrency string,
 	// +optional
 	onPullRequestBranches []string,
 	// +optional
@@ -208,6 +222,9 @@ func (m *Gha) WithPipeline(
 	}
 	if !noDispatch {
 		p.Triggers.WorkflowDispatch = &WorkflowDispatchEvent{}
+	}
+	if pullRequestConcurrency != "" {
+		p.Settings.PullRequestConcurrency = pullRequestConcurrency
 	}
 	if runner != "" {
 		p.Settings.Runner = runner
@@ -395,6 +412,25 @@ func (p *Pipeline) Config() *dagger.Directory {
 	return p.asWorkflow().Config(p.workflowFilename(), p.Settings.AsJson)
 }
 
+func (p *Pipeline) concurrency() *WorkflowConcurrency {
+	setting := p.Settings.PullRequestConcurrency
+	if setting == "" || setting == "allow" {
+		return nil
+	}
+	if (setting != "queue") && (setting != "preempt") {
+		panic("Unsupported value for 'pullRequestConcurrency': " + setting)
+	}
+	concurrency := &WorkflowConcurrency{
+		// If in a pull request: concurrency group is unique to workflow + head branch
+		// If NOT in a pull request: concurrency group is unique to run ID -> no grouping
+		Group: "${{ github.workflow }}-${{ github.head_ref || github.run_id }}",
+	}
+	if setting == "preempt" {
+		concurrency.CancelInProgress = true
+	}
+	return concurrency
+}
+
 func (p *Pipeline) checkSecretNames() error {
 	// check if the secret name contains only alphanumeric characters and underscores.
 	validName := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
@@ -455,8 +491,9 @@ func (p *Pipeline) asWorkflow() Workflow {
 		steps = append(steps, p.stopEngineStep())
 	}
 	return Workflow{
-		Name: p.Name,
-		On:   p.Triggers,
+		Name:        p.Name,
+		On:          p.Triggers,
+		Concurrency: p.concurrency(),
 		Jobs: map[string]Job{
 			p.jobID(): Job{
 				// The job name is used by the "required checks feature" in branch protection rules

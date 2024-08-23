@@ -19,6 +19,20 @@ func (m *Examples) Gha_Secrets() *dagger.Directory {
 		Config()
 }
 
+// Limit per-PR concurrency for expensive test pipelines
+func (m *Examples) Gha_Concurrency() *dagger.Directory {
+	return dag.
+		Gha().
+		WithPipeline(
+			"Giant test suite",
+			"test --all",
+			dagger.GhaWithPipelineOpts{
+				PullRequestConcurrency: "preempt",
+			},
+		).
+		Config()
+}
+
 // Access github context information magically injected as env variables
 func (m *Examples) Gha_GithubContext() *dagger.Directory {
 	return dag.
