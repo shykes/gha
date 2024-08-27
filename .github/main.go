@@ -49,6 +49,14 @@ func (m *Github) Generate() *dagger.Directory {
 				Module:   "github.com/shykes/core",
 				Dispatch: true,
 			}).
+		WithPipeline(
+			"Schedule pipeline",
+			"directory with-directory --path=. --directory=. glob --pattern=*",
+			dagger.GhaWithPipelineOpts{
+				Module:     "github.com/shykes/core",
+				OnSchedule: []string{"*/20 * * * *"}, // run every 20 minutes.
+			},
+		).
 		Config().
 		Directory(".github")
 }
