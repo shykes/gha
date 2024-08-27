@@ -278,7 +278,7 @@ func (m *Gha) WithPipeline(
 		p.OnPullRequest([]string{"synchronize"}, nil, nil)
 	}
 	if onPullRequestConverted_to_draft {
-		p.OnPullRequest([]string{"converted-to-draft"}, nil, nil)
+		p.OnPullRequest([]string{"converted_to_draft"}, nil, nil)
 	}
 	if onPullRequestLocked {
 		p.OnPullRequest([]string{"locked"}, nil, nil)
@@ -299,19 +299,19 @@ func (m *Gha) WithPipeline(
 		p.OnPullRequest([]string{"demilestoned"}, nil, nil)
 	}
 	if onPullRequestReadyForReview {
-		p.OnPullRequest([]string{"ready-for-review"}, nil, nil)
+		p.OnPullRequest([]string{"ready_for_review"}, nil, nil)
 	}
 	if onPullRequestReviewRequested {
-		p.OnPullRequest([]string{"review-requested"}, nil, nil)
+		p.OnPullRequest([]string{"review_requested"}, nil, nil)
 	}
 	if onPullRequestReviewRequestRemoved {
-		p.OnPullRequest([]string{"review-request-removed"}, nil, nil)
+		p.OnPullRequest([]string{"review_request_removed"}, nil, nil)
 	}
 	if onPullRequestAutoMergeEnabled {
-		p.OnPullRequest([]string{"auto-merge-enabled"}, nil, nil)
+		p.OnPullRequest([]string{"auto_merge_enabled"}, nil, nil)
 	}
 	if onPullRequestAutoMergeDisabled {
-		p.OnPullRequest([]string{"auto-merge-disabled"}, nil, nil)
+		p.OnPullRequest([]string{"auto_merge_disabled"}, nil, nil)
 	}
 	if onPush {
 		p.OnPush(nil, nil)
