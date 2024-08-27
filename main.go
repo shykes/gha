@@ -210,6 +210,9 @@ func (m *Gha) WithPipeline(
 	// Run the pipeline on git push to the specified branches
 	// +optional
 	onPushBranches []string,
+	// Run the pipeline at a schedule time
+	// +optional
+	onSchedule []string,
 ) *Gha {
 	p := &Pipeline{
 		Name:           name,
@@ -322,6 +325,9 @@ func (m *Gha) WithPipeline(
 	if onPushTags != nil {
 		p.OnPush(nil, onPushTags)
 	}
+	if onSchedule != nil {
+		p.OnSchedule(onSchedule)
+	}
 	m.Pipelines = append(m.Pipelines, p)
 	return m
 }
@@ -375,6 +381,21 @@ func (p *Pipeline) OnPush(
 	}
 	p.Triggers.Push.Branches = append(p.Triggers.Push.Branches, branches...)
 	p.Triggers.Push.Tags = append(p.Triggers.Push.Tags, tags...)
+	return p
+}
+
+// Add a trigger to execute a Dagger pipeline on a schedule time
+func (p *Pipeline) OnSchedule(
+	// Cron exressions from https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07.
+	// +optional
+	expressions []string,
+) *Pipeline {
+	if p.Triggers.Schedule == nil {
+		p.Triggers.Schedule = make([]ScheduledEvent, len(expressions))
+		for i, expression := range expressions {
+			p.Triggers.Schedule[i] = ScheduledEvent{Cron: expression}
+		}
+	}
 	return p
 }
 
