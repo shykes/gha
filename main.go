@@ -55,24 +55,17 @@ func New(
 type Gha struct {
 	// +private
 	Pipelines []*Pipeline
-	// +private
+	// Settings for this Github Actions project
 	Settings Settings
 }
 
 type Settings struct {
-	// +private
-	PublicToken string
-	// +private
-	DaggerVersion string
-	// +private
-	NoTraces bool
-	// +private
-	StopEngine bool
-	// +private
-	AsJson bool
-	// +private
-	Runner string
-	// +private
+	PublicToken            string
+	DaggerVersion          string
+	NoTraces               bool
+	StopEngine             bool
+	AsJson                 bool
+	Runner                 string
 	PullRequestConcurrency string
 }
 
