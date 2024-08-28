@@ -125,6 +125,9 @@ func (m *Gha) WithPipeline(
 	// Enable lfs on git checkout
 	// +optional
 	lfs bool,
+	// Dagger version to run this pipeline
+	// +optional
+	daggerVersion string,
 	// The maximum number of minutes to run the pipeline before killing the process
 	// +optional
 	timeoutMinutes int,
@@ -222,6 +225,9 @@ func (m *Gha) WithPipeline(
 	}
 	if pullRequestConcurrency != "" {
 		p.Settings.PullRequestConcurrency = pullRequestConcurrency
+	}
+	if daggerVersion != "" {
+		p.Settings.DaggerVersion = daggerVersion
 	}
 	if runner != "" {
 		p.Settings.Runner = runner
