@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/shykes/gha/internal/dagger"
+	"golang.org/x/mod/semver"
 )
 
 func New(
@@ -495,12 +496,11 @@ func (p *Pipeline) Check(
 // Generate a GHA workflow from a Dagger pipeline definition.
 // The workflow will have no triggers, they should be filled separately.
 func (p *Pipeline) asWorkflow() Workflow {
-	steps := []JobStep{
-		p.checkoutStep(),
-		p.installDaggerStep(),
-		p.warmEngineStep(),
-		p.callDaggerStep(),
-	}
+	var steps []JobStep
+	// FIXME: make checkout configurable
+	steps = append(steps, p.checkoutStep())
+	steps = append(steps, p.installDaggerSteps()...)
+	steps = append(steps, p.warmEngineStep(), p.callDaggerStep())
 	if p.Settings.StopEngine {
 		steps = append(steps, p.stopEngineStep())
 	}
@@ -564,10 +564,32 @@ func (p *Pipeline) warmEngineStep() JobStep {
 	return p.bashStep("warm-engine", nil)
 }
 
-func (p *Pipeline) installDaggerStep() JobStep {
-	return p.bashStep("install-dagger", map[string]string{
-		"DAGGER_VERSION": p.Settings.DaggerVersion,
-	})
+func (p *Pipeline) installDaggerSteps() []JobStep {
+	if v := p.Settings.DaggerVersion; (v == "latest") || (semver.IsValid(v)) {
+		return []JobStep{
+			p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": v}),
+		}
+	}
+	// Interpret dagger version as a local source, and build it
+	return []JobStep{
+		// Install latest dagger to bootstrap dev dagger
+		p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": "latest"}),
+		JobStep{
+			Name: "Install go",
+			Uses: "actions/setup-go@v5",
+			With: map[string]string{
+				"go-version":            "1.22",
+				"cache-dependency-path": "dev/go.sum",
+			},
+		},
+		p.bashStep("start-dev-dagger", map[string]string{
+			"DAGGER_SOURCE": p.Settings.DaggerVersion,
+			// create separate outputs and containers for each job run (to prevent
+			// collisions with shared docker containers).
+			"_EXPERIMENTAL_DAGGER_DEV_OUTPUT":    "./bin/dev-${{ github.run_id }}",
+			"_EXPERIMENTAL_DAGGER_DEV_CONTAINER": "dagger-engine.dev-${{ github.run_id }}di",
+		}),
+	}
 }
 
 func (p *Pipeline) callDaggerStep() JobStep {
@@ -598,6 +620,11 @@ func (p *Pipeline) callDaggerStep() JobStep {
 	// github.ref becomes $GITHUB_REF, etc.
 	for _, key := range githubContextKeys {
 		env["GITHUB_"+strings.ToUpper(key)] = fmt.Sprintf("${{ github.%s }}", key)
+	}
+	// Inject Github context keys
+	// runner.ref becomes $RUNNER_REF, etc.
+	for _, key := range runnerContextKeys {
+		env["RUNNER_"+strings.ToUpper(key)] = fmt.Sprintf("${{ runner.%s }}", key)
 	}
 	return p.bashStep("exec", env)
 }

@@ -12,6 +12,25 @@ const (
 )
 
 var (
+	// List of keys available as '${{runner.KEY}}'
+	// See https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/contexts#runner-context
+	runnerContextKeys = []string{
+		// The name of the runner executing the job. This name may not be unique in a workflow run as runners at the repository and organization levels could use the same name.
+		"name",
+		// The operating system of the runner executing the job. Possible values are Linux, Windows, or macOS.
+		"os",
+		// The architecture of the runner executing the job. Possible values are X86, X64, ARM, or ARM64.
+		"arch",
+		// The path to a temporary directory on the runner. This directory is emptied at the beginning and end of each job. Note that files will not be removed if the runner's user account does not have permission to delete them.
+		"temp",
+		// The path to the directory containing preinstalled tools for GitHub-hosted runners. For more information, see "Using GitHub-hosted runners".
+		"tool_cache",
+		// This is set only if debug logging is enabled, and always has the value of 1. It can be useful as an indicator to enable additional debugging or verbose logging in your own job steps.
+		"debug",
+		// The environment of the runner executing the job. Possible values are: github-hosted for GitHub-hosted runners provided by GitHub, and self-hosted for self-hosted runners configured by the repository owner.
+		"environment",
+	}
+
 	// List of keys available as '${{github.KEY}}'
 	// See https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/contexts#github-context
 	githubContextKeys = []string{

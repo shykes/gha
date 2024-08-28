@@ -21,6 +21,8 @@ require (
 	google.golang.org/grpc v1.64.0
 )
 
+require golang.org/x/mod v0.20.0 // indirect
+
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
