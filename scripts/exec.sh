@@ -9,6 +9,12 @@ if [[ -n "$DEBUG" && "$DEBUG" != "0" ]]; then
     ps aux
 fi
 
+# Detect if a dev engine is available, if so: use that
+# We don't rely on PATH because the GHA runner messes with that
+if [[ -n "$_EXPERIMENTAL_DAGGER_CLI_BIN" ]]; then
+    export PATH=$(dirname "$_EXPERIMENTAL_DAGGER_CLI_BIN"):$PATH
+fi
+
 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
 export NO_COLOR="${NO_COLOR:=1}" # Disable colors in dagger logs

@@ -583,9 +583,10 @@ func (p *Pipeline) installDaggerSteps() []JobStep {
 			p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": v}),
 		}
 	}
-	// Interpret dagger version as a local source, and build it
+	// Interpret dagger version as a local source, and build it (dev engine)
 	return []JobStep{
 		// Install latest dagger to bootstrap dev dagger
+		// FIXME: let's daggerize this, using dagger in dagger :)
 		p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": "latest"}),
 		JobStep{
 			Name: "Install go",
