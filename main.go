@@ -68,6 +68,7 @@ type Settings struct {
 	AsJson                 bool
 	Runner                 string
 	PullRequestConcurrency string
+	Debug                  bool
 }
 
 // Validate a Github Actions configuration (best effort)
@@ -125,6 +126,9 @@ func (m *Gha) WithPipeline(
 	// Enable lfs on git checkout
 	// +optional
 	lfs bool,
+	// Run the pipeline in debug mode
+	// +optional
+	debug bool,
 	// Dagger version to run this pipeline
 	// +optional
 	daggerVersion string,
@@ -225,6 +229,9 @@ func (m *Gha) WithPipeline(
 	}
 	if pullRequestConcurrency != "" {
 		p.Settings.PullRequestConcurrency = pullRequestConcurrency
+	}
+	if debug {
+		p.Settings.Debug = debug
 	}
 	if daggerVersion != "" {
 		p.Settings.DaggerVersion = daggerVersion
@@ -600,6 +607,10 @@ func (p *Pipeline) installDaggerSteps() []JobStep {
 
 func (p *Pipeline) callDaggerStep() JobStep {
 	env := map[string]string{}
+	// Debug mode
+	if p.Settings.Debug {
+		env["DEBUG"] = "1"
+	}
 	// Inject dagger command
 	env["COMMAND"] = "dagger call -q " + p.Command
 	// Inject user-defined secrets

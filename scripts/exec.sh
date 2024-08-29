@@ -1,5 +1,14 @@
 #!/bin/bash --noprofile --norc -e -o pipefail
 
+if [[ -n "$DEBUG" && "$DEBUG" != "0" ]]; then
+    set -x
+    env
+    which dagger
+    pwd
+    ls -l
+    ps aux
+fi
+
 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
 export NO_COLOR="${NO_COLOR:=1}" # Disable colors in dagger logs
