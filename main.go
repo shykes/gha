@@ -105,8 +105,15 @@ func (m *Gha) Config(ctx context.Context) *dagger.Directory {
 func (m *Gha) otherWorkflows(ctx context.Context) *dagger.Directory {
 	dir := dag.Directory()
 	if repo := m.Settings.Repository; repo != nil {
-		if workflows, err := repo.Directory(".github/workflows").Sync(ctx); err == nil {
-			dir = dir.WithDirectory(".github/workflows", workflows)
+		if filenames, err := repo.Directory(".github/workflows").Entries(ctx); err == nil {
+			for _, filename := range filenames {
+				workflow := repo.File(".github/workflows/" + filename)
+				if contents, err := repo.File(".github/workflows/" + filename).Contents(ctx); err == nil {
+					if !strings.HasPrefix(contents, "# This file was generated.") {
+						dir = dir.WithFile(".github/workflows/"+filename, workflow)
+					}
+				}
+			}
 		}
 	}
 	return dir
