@@ -9,10 +9,16 @@ type Github struct{}
 // Generate our CI config
 // Export to .github at the repository root
 // Example: 'dagger call -m .github -o .github'
-func (m *Github) Generate() *dagger.Directory {
+func (m *Github) Generate(
+	// +optional
+	// +defaultPath="/"
+	// +ignore=["!.github"]
+	repository *dagger.Directory,
+) *dagger.Directory {
 	return dag.
 		Gha(dagger.GhaOpts{
 			DaggerVersion: "latest",
+			Repository:    repository,
 		}).
 		WithPipeline(
 			"Deploy docs",
@@ -57,6 +63,5 @@ func (m *Github) Generate() *dagger.Directory {
 				OnSchedule: []string{"*/20 * * * *"}, // run every 20 minutes.
 			},
 		).
-		Config().
-		Directory(".github")
+		Config()
 }

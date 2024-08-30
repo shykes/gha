@@ -1,17 +1,28 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
-name: Deploy docs
+name: Demo pipeline 2
 "on":
     push:
+        branches:
+            - main
         tags:
-            - deploy-docs
+            - '*'
+    pull_request: {}
     workflow_dispatch: {}
 jobs:
     dagger:
         runs-on: ubuntu-latest
-        name: Deploy docs
+        name: Demo pipeline 2
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                sparse-checkout: |-
+                    misc
+                    scripts
+                    dagger.json
+                    .dagger
+                    dagger
+                    ci
             - name: scripts/install-dagger.sh
               id: install-dagger
               run: |
@@ -53,6 +64,21 @@ jobs:
               id: exec
               run: |
                 #!/bin/bash --noprofile --norc -e -o pipefail
+
+                if [[ -n "$DEBUG" && "$DEBUG" != "0" ]]; then
+                    set -x
+                    env
+                    which dagger
+                    pwd
+                    ls -l
+                    ps aux
+                fi
+
+                # Detect if a dev engine is available, if so: use that
+                # We don't rely on PATH because the GHA runner messes with that
+                if [[ -n "$_EXPERIMENTAL_DAGGER_CLI_BIN" ]]; then
+                    export PATH=$(dirname "$_EXPERIMENTAL_DAGGER_CLI_BIN"):$PATH
+                fi
 
                 GITHUB_OUTPUT="${GITHUB_OUTPUT:=github-output.txt}"
                 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:=github-summary.md}"
@@ -169,8 +195,9 @@ jobs:
                 exit $EXIT_CODE
               env:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                COMMAND: dagger call -q deploy-docs --token $NETLIFY_TOKEN
+                COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+                DAGGER_MODULE: github.com/shykes/core
                 GITHUB_ACTION: ${{ github.action }}
                 GITHUB_ACTION_PATH: ${{ github.action_path }}
                 GITHUB_ACTION_REF: ${{ github.action_ref }}
@@ -209,7 +236,13 @@ jobs:
                 GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
                 GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
                 GITHUB_WORKSPACE: ${{ github.workspace }}
-                NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+                RUNNER_ARCH: ${{ runner.arch }}
+                RUNNER_DEBUG: ${{ runner.debug }}
+                RUNNER_ENVIRONMENT: ${{ runner.environment }}
+                RUNNER_NAME: ${{ runner.name }}
+                RUNNER_OS: ${{ runner.os }}
+                RUNNER_TEMP: ${{ runner.temp }}
+                RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}
               shell: bash
         outputs:
             stderr: ${{ steps.exec.outputs.stderr }}

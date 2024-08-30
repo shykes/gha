@@ -8,6 +8,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -42,6 +43,14 @@ func New(
 	// +optional
 	// +default="ubuntu-latest"
 	runner string,
+	// File extension to use for generated workflow files
+	// +optional
+	// +default=".gen.yml"
+	fileExtension string,
+	// Existing repository root, to merge existing content
+	// +optional
+	// +ignore=["!.github"]
+	repository *dagger.Directory,
 ) *Gha {
 	return &Gha{Settings: Settings{
 		PublicToken:   publicToken,
@@ -50,6 +59,8 @@ func New(
 		StopEngine:    stopEngine,
 		AsJson:        asJson,
 		Runner:        runner,
+		FileExtension: fileExtension,
+		Repository:    repository,
 	}}
 }
 
@@ -69,6 +80,8 @@ type Settings struct {
 	Runner                 string
 	PullRequestConcurrency string
 	Debug                  bool
+	FileExtension          string
+	Repository             *dagger.Directory
 }
 
 // Validate a Github Actions configuration (best effort)
@@ -82,16 +95,72 @@ func (m *Gha) Validate(ctx context.Context, repo *dagger.Directory) (*Gha, error
 }
 
 // Export the configuration to a .github directory
-func (m *Gha) Config(
-	// Prefix to use for generated workflow filenames
-	// +optional
-	prefix string,
-) *dagger.Directory {
+func (m *Gha) Config(ctx context.Context) *dagger.Directory {
+	return m.
+		otherWorkflows(ctx).
+		WithDirectory(".", m.generatedWorkflows()).
+		WithDirectory(".", m.gitAttributes(ctx))
+}
+
+func (m *Gha) otherWorkflows(ctx context.Context) *dagger.Directory {
+	dir := dag.Directory()
+	if repo := m.Settings.Repository; repo != nil {
+		if workflows, err := repo.Directory(".github/workflows").Sync(ctx); err == nil {
+			dir = dir.WithDirectory(".github/workflows", workflows)
+		}
+	}
+	return dir
+}
+
+func (m *Gha) generatedWorkflows() *dagger.Directory {
 	dir := dag.Directory()
 	for _, p := range m.Pipelines {
 		dir = dir.WithDirectory(".", p.Config())
 	}
 	return dir
+}
+
+func (m *Gha) gitAttributes(ctx context.Context) *dagger.Directory {
+	// Need a custom file extension to match generated files in .gitattributes
+	if ext := m.Settings.FileExtension; ext == ".yml" || ext == ".yaml" {
+		return dag.Directory()
+	}
+	repo := m.Settings.Repository
+	// Need access to the existing .gitattributes, to avoid appending the same line multiple times
+	if repo == nil {
+		return dag.Directory()
+	}
+	attributes, err := repo.File(".github/.gitattributes").Contents(ctx)
+	// Need access to the existing .gitattributes, to avoid appending the same line multiple times
+	if err != nil {
+		// FIXME: differentiate between file not found and other errors. I can never remember how
+		return dag.Directory()
+	}
+	return dag.
+		Directory().
+		WithNewFile(
+			".github/.gitattributes",
+			appendOnce(attributes, "**"+m.Settings.FileExtension+" linguist-generated"),
+		)
+}
+
+// Append a line to a string, only if it doesn't already exist
+func appendOnce(s, line string) string {
+	if !lineMatch(s, line) {
+		return s + "\n" + line + "\n"
+	}
+	return s
+}
+
+// Check if a string contains a line
+func lineMatch(s, line string) bool {
+	scanner := bufio.NewScanner(strings.NewReader(s))
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) == line {
+			return true
+		}
+	}
+	return false
 }
 
 // Add a pipeline
@@ -545,8 +614,8 @@ func (p *Pipeline) workflowFilename() string {
 	name = re.ReplaceAllString(name, "-")
 	// Trim leading and trailing hyphens
 	name = strings.Trim(name, "-")
-	// Add the .yml extension
-	return name + ".yml"
+	// Add the file extension
+	return name + p.Settings.FileExtension
 }
 
 func (p *Pipeline) jobID() string {
