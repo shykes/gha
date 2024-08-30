@@ -19,6 +19,7 @@ func (m *Github) Generate(
 		Gha(dagger.GhaOpts{
 			DaggerVersion: "latest",
 			Repository:    repository,
+			FileExtension: ".yml",
 		}).
 		WithPipeline(
 			"Deploy docs",
