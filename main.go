@@ -51,16 +51,20 @@ func New(
 	// +optional
 	// +ignore=["!.github"]
 	repository *dagger.Directory,
+	// Default timeout for CI jobs, in minutes
+	// +optional
+	timeoutMinutes int,
 ) *Gha {
 	return &Gha{Settings: Settings{
-		PublicToken:   publicToken,
-		NoTraces:      noTraces,
-		DaggerVersion: daggerVersion,
-		StopEngine:    stopEngine,
-		AsJson:        asJson,
-		Runner:        runner,
-		FileExtension: fileExtension,
-		Repository:    repository,
+		PublicToken:    publicToken,
+		NoTraces:       noTraces,
+		DaggerVersion:  daggerVersion,
+		StopEngine:     stopEngine,
+		AsJson:         asJson,
+		Runner:         runner,
+		FileExtension:  fileExtension,
+		Repository:     repository,
+		TimeoutMinutes: timeoutMinutes,
 	}}
 }
 
@@ -82,6 +86,7 @@ type Settings struct {
 	Debug                  bool
 	FileExtension          string
 	Repository             *dagger.Directory
+	TimeoutMinutes         int
 }
 
 // Validate a Github Actions configuration (best effort)
@@ -314,6 +319,9 @@ func (m *Gha) WithPipeline(
 	}
 	if runner != "" {
 		p.Settings.Runner = runner
+	}
+	if timeoutMinutes != 0 {
+		p.Settings.TimeoutMinutes = timeoutMinutes
 	}
 	if onIssueComment {
 		p.OnIssueComment(nil)
@@ -600,9 +608,10 @@ func (p *Pipeline) asWorkflow() Workflow {
 		Jobs: map[string]Job{
 			p.jobID(): Job{
 				// The job name is used by the "required checks feature" in branch protection rules
-				Name:   p.Name,
-				RunsOn: p.Settings.Runner,
-				Steps:  steps,
+				Name:           p.Name,
+				RunsOn:         p.Settings.Runner,
+				Steps:          steps,
+				TimeoutMinutes: p.Settings.TimeoutMinutes,
 				Outputs: map[string]string{
 					"stdout": "${{ steps.exec.outputs.stdout }}",
 					"stderr": "${{ steps.exec.outputs.stderr }}",
