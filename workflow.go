@@ -191,6 +191,7 @@ type DispatchInput struct {
 
 type Job struct {
 	RunsOn         string            `json:"runs-on" yaml:"runs-on"`
+	Permissions    *JobPermissions   `json:"permissions,omitempty" yaml:"permissions,omitempty"`
 	Name           string            `json:"name" yaml:"name"`
 	Needs          []string          `json:"needs,omitempty" yaml:"needs,omitempty"`
 	Steps          []JobStep         `json:"steps" yaml:"steps"`
@@ -216,4 +217,30 @@ type Strategy struct {
 	Matrix      map[string][]string `json:"matrix,omitempty" yaml:"matrix,omitempty"`
 	MaxParallel int                 `json:"max-parallel,omitempty" yaml:"max-parallel,omitempty"`
 	FailFast    bool                `json:"fail-fast,omitempty" yaml:"fail-fast,omitempty"`
+}
+
+// PermissionLevel represents the possible levels of permissions in a job.
+type PermissionLevel string
+
+const (
+	PermissionRead  PermissionLevel = "read"
+	PermissionWrite PermissionLevel = "write"
+	PermissionNone  PermissionLevel = "none"
+)
+
+// Permissions defines the permission levels for various scopes in a job.
+type JobPermissions struct {
+	Contents           PermissionLevel `json:"contents,omitempty" yaml:"contents,omitempty"`
+	Issues             PermissionLevel `json:"issues,omitempty" yaml:"issues,omitempty"`
+	Actions            PermissionLevel `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Packages           PermissionLevel `json:"packages,omitempty" yaml:"packages,omitempty"`
+	Deployments        PermissionLevel `json:"deployments,omitempty" yaml:"deployments,omitempty"`
+	PullRequests       PermissionLevel `json:"pull-requests,omitempty" yaml:"pull-requests,omitempty"`
+	Pages              PermissionLevel `json:"pages,omitempty" yaml:"pages,omitempty"`
+	IdToken            PermissionLevel `json:"id-token,omitempty" yaml:"id-token,omitempty"`
+	RepositoryProjects PermissionLevel `json:"repository-projects,omitempty" yaml:"repository-projects,omitempty"`
+	Statuses           PermissionLevel `json:"statuses,omitempty" yaml:"statuses,omitempty"`
+	Metadata           PermissionLevel `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	Checks             PermissionLevel `json:"checks,omitempty" yaml:"checks,omitempty"`
+	Discussions        PermissionLevel `json:"discussions,omitempty" yaml:"discussions,omitempty"`
 }

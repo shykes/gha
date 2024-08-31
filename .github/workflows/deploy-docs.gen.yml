@@ -8,6 +8,8 @@ name: Deploy docs
 jobs:
     dagger:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
         name: Deploy docs
         steps:
             - name: Checkout

@@ -87,6 +87,7 @@ type Settings struct {
 	FileExtension          string
 	Repository             *dagger.Directory
 	TimeoutMinutes         int
+	Permissions            Permissions
 }
 
 // Validate a Github Actions configuration (best effort)
@@ -216,6 +217,9 @@ func (m *Gha) WithPipeline(
 	// The maximum number of minutes to run the pipeline before killing the process
 	// +optional
 	timeoutMinutes int,
+	// Permissions to grant the pipeline
+	// +optional
+	permissions Permissions,
 	// Run the pipeline on any issue comment activity
 	// +optional
 	onIssueComment bool,
@@ -310,6 +314,10 @@ func (m *Gha) WithPipeline(
 	}
 	if pullRequestConcurrency != "" {
 		p.Settings.PullRequestConcurrency = pullRequestConcurrency
+	}
+	if permissions != nil {
+		fmt.Printf("permissions: %v\n", permissions)
+		p.Settings.Permissions = permissions
 	}
 	if debug {
 		p.Settings.Debug = debug
@@ -610,6 +618,7 @@ func (p *Pipeline) asWorkflow() Workflow {
 				// The job name is used by the "required checks feature" in branch protection rules
 				Name:           p.Name,
 				RunsOn:         p.Settings.Runner,
+				Permissions:    p.JobPermissions(),
 				Steps:          steps,
 				TimeoutMinutes: p.Settings.TimeoutMinutes,
 				Outputs: map[string]string{
@@ -619,6 +628,10 @@ func (p *Pipeline) asWorkflow() Workflow {
 			},
 		},
 	}
+}
+
+func (p *Pipeline) JobPermissions() *JobPermissions {
+	return p.Settings.Permissions.JobPermissions()
 }
 
 func (p *Pipeline) workflowFilename() string {
