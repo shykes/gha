@@ -184,51 +184,6 @@ jobs:
                 COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/core
-                GITHUB_ACTION: ${{ github.action }}
-                GITHUB_ACTION_PATH: ${{ github.action_path }}
-                GITHUB_ACTION_REF: ${{ github.action_ref }}
-                GITHUB_ACTION_REPOSITORY: ${{ github.action_repository }}
-                GITHUB_ACTION_STATUS: ${{ github.action_status }}
-                GITHUB_ACTOR: ${{ github.actor }}
-                GITHUB_ACTOR_ID: ${{ github.actor_id }}
-                GITHUB_API_URL: ${{ github.api_url }}
-                GITHUB_BASE_REF: ${{ github.base_ref }}
-                GITHUB_ENV: ${{ github.env }}
-                GITHUB_EVENT_NAME: ${{ github.event_name }}
-                GITHUB_EVENT_PATH: ${{ github.event_path }}
-                GITHUB_GRAPHQL_URL: ${{ github.graphql_url }}
-                GITHUB_HEAD_REF: ${{ github.head_ref }}
-                GITHUB_JOB: ${{ github.job }}
-                GITHUB_PATH: ${{ github.path }}
-                GITHUB_REF: ${{ github.ref }}
-                GITHUB_REF_NAME: ${{ github.ref_name }}
-                GITHUB_REF_PROTECTED: ${{ github.ref_protected }}
-                GITHUB_REF_TYPE: ${{ github.ref_type }}
-                GITHUB_REPOSITORY: ${{ github.repository }}
-                GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
-                GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-                GITHUB_REPOSITORY_OWNER_ID: ${{ github.repository_owner_id }}
-                GITHUB_REPOSITORYURL: ${{ github.repositoryUrl }}
-                GITHUB_RETENTION_DAYS: ${{ github.retention_days }}
-                GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-                GITHUB_RUN_ID: ${{ github.run_id }}
-                GITHUB_RUN_NUMBER: ${{ github.run_number }}
-                GITHUB_SECRET_SOURCE: ${{ github.secret_source }}
-                GITHUB_SERVER_URL: ${{ github.server_url }}
-                GITHUB_SHA: ${{ github.sha }}
-                GITHUB_TOKEN: ${{ github.token }}
-                GITHUB_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
-                GITHUB_WORKFLOW: ${{ github.workflow }}
-                GITHUB_WORKFLOW_REF: ${{ github.workflow_ref }}
-                GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
-                GITHUB_WORKSPACE: ${{ github.workspace }}
-                RUNNER_ARCH: ${{ runner.arch }}
-                RUNNER_DEBUG: ${{ runner.debug }}
-                RUNNER_ENVIRONMENT: ${{ runner.environment }}
-                RUNNER_NAME: ${{ runner.name }}
-                RUNNER_OS: ${{ runner.os }}
-                RUNNER_TEMP: ${{ runner.temp }}
-                RUNNER_TOOL_CACHE: ${{ runner.tool_cache }}
               shell: bash
         outputs:
             stderr: ${{ steps.exec.outputs.stderr }}
