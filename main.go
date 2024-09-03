@@ -766,9 +766,6 @@ func (p *Pipeline) callDaggerStep() JobStep {
 			// Inject Runner context keys
 			// runner.ref becomes $RUNNER_REF, etc.
 			env[key] = fmt.Sprintf("${{ runner.%s }}", strings.ToLower(key))
-		} else {
-			// Assume anything else is a secret
-			env[key] = fmt.Sprintf("${{ secrets.%s }}", key)
 		}
 	}
 	return p.bashStep("exec", env)

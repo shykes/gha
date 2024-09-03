@@ -26,6 +26,7 @@ func (m *Github) Generate(
 			dagger.GhaWithPipelineOpts{
 				OnPushTags:  []string{"deploy-docs"},
 				Permissions: []dagger.GhaPermission{dagger.ReadContents},
+				Secrets:     []string{"NETLIFY_TOKEN", "DOCKER_CONFIG"},
 			},
 		).
 		WithPipeline(
