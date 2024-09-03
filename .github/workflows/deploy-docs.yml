@@ -1,11 +1,14 @@
 # This file was generated. See https://daggerverse.dev/mod/github.com/shykes/gha
-name: Demo pipeline 3
+name: Deploy docs
 "on":
+    push:
+        tags:
+            - deploy-docs
     workflow_dispatch: {}
 jobs:
     dagger:
         runs-on: ubuntu-latest
-        name: Demo pipeline 3
+        name: Deploy docs
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -181,9 +184,10 @@ jobs:
                 exit $EXIT_CODE
               env:
                 _EXPERIMENTAL_DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
+                COMMAND: dagger call -q deploy-docs --token $NETLIFY_TOKEN --docker-config $DOCKER_CONFIG
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-                DAGGER_MODULE: github.com/shykes/core
+                DOCKER_CONFIG: ${{ secrets.DOCKER_CONFIG }}
+                NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
               shell: bash
         outputs:
             stderr: ${{ steps.exec.outputs.stderr }}

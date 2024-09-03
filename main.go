@@ -13,10 +13,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/shykes/gha/internal/dagger"
 	"golang.org/x/mod/semver"
+	"mvdan.cc/sh/shell"
 )
 
 func New(
@@ -704,6 +706,29 @@ func (p *Pipeline) installDaggerSteps() []JobStep {
 	}
 }
 
+// Analyze the pipeline command, and return a list of env variables it references
+func (p *Pipeline) envLookups() []string {
+	var lookups = make(map[string]interface{})
+	_, err := shell.Expand(p.Command, func(name string) string {
+		lookups[name] = nil
+		return name
+	})
+	if err != nil {
+		// An error might mean an invalid command OR a bug or incomatibility in our parser,
+		// let's not surface it for now.
+		return nil
+	}
+	result := make([]string, 0, len(lookups))
+	for name, _ := range lookups {
+		if name == "IFS" {
+			continue
+		}
+		result = append(result, name)
+	}
+	sort.Strings(result)
+	return result
+}
+
 func (p *Pipeline) callDaggerStep() JobStep {
 	env := map[string]string{}
 	// Debug mode
@@ -732,15 +757,19 @@ func (p *Pipeline) callDaggerStep() JobStep {
 			env["_EXPERIMENTAL_DAGGER_CLOUD_TOKEN"] = "${{ secrets.DAGGER_CLOUD_TOKEN }}"
 		}
 	}
-	// Inject Github context keys
-	// github.ref becomes $GITHUB_REF, etc.
-	for _, key := range githubContextKeys {
-		env["GITHUB_"+strings.ToUpper(key)] = fmt.Sprintf("${{ github.%s }}", key)
-	}
-	// Inject Github context keys
-	// runner.ref becomes $RUNNER_REF, etc.
-	for _, key := range runnerContextKeys {
-		env["RUNNER_"+strings.ToUpper(key)] = fmt.Sprintf("${{ runner.%s }}", key)
+	for _, key := range p.envLookups() {
+		if strings.HasPrefix(key, "GITHUB_") {
+			// Inject Github context keys
+			// github.ref becomes $GITHUB_REF, etc.
+			env[key] = fmt.Sprintf("${{ github.%s }}", strings.ToLower(key))
+		} else if strings.HasPrefix(key, "RUNNER_") {
+			// Inject Runner context keys
+			// runner.ref becomes $RUNNER_REF, etc.
+			env[key] = fmt.Sprintf("${{ runner.%s }}", strings.ToLower(key))
+		} else {
+			// Assume anything else is a secret
+			env[key] = fmt.Sprintf("${{ secrets.%s }}", key)
+		}
 	}
 	return p.bashStep("exec", env)
 }
