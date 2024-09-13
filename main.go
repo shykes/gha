@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/shykes/gha/internal/dagger"
@@ -200,6 +201,10 @@ func (m *Gha) WithPipeline(
 	// Example: ["src", "tests", "Dockerfile"]
 	// +optional
 	sparseCheckout []string,
+	// Number of commit to fetch.
+	// +optional
+	// +default="1"
+	fetchDepth int,
 	// (DEPRECATED) allow this pipeline to be manually "dispatched"
 	// +optional
 	// +deprecated
@@ -308,6 +313,7 @@ func (m *Gha) WithPipeline(
 		Module:         module,
 		Secrets:        secrets,
 		SparseCheckout: sparseCheckout,
+		FetchDepth:     fetchDepth,
 		LFS:            lfs,
 		Settings:       m.Settings,
 	}
@@ -523,6 +529,8 @@ type Pipeline struct {
 	// +private
 	SparseCheckout []string
 	// +private
+	FetchDepth int
+	// +private
 	LFS bool
 	// +private
 	Settings Settings
@@ -657,7 +665,9 @@ func (p *Pipeline) checkoutStep() JobStep {
 	step := JobStep{
 		Name: "Checkout",
 		Uses: "actions/checkout@v4",
-		With: map[string]string{},
+		With: map[string]string{
+			"fetch-depth": strconv.Itoa(p.FetchDepth),
+		},
 	}
 	if p.SparseCheckout != nil {
 		// Include common dagger paths in the checkout, to make
