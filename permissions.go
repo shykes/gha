@@ -32,13 +32,13 @@ func (perms Permissions) JobPermissions() (p *JobPermissions) {
 			p.Packages = perm.Level()
 		case "deployments":
 			p.Deployments = perm.Level()
-		case "pull-requests":
+		case "pull_requests":
 			p.PullRequests = perm.Level()
 		case "pages":
 			p.Pages = perm.Level()
-		case "id-token":
+		case "id_token":
 			p.IdToken = perm.Level()
-		case "repository-projects":
+		case "repository_projects":
 			p.RepositoryProjects = perm.Level()
 		case "statuses":
 			p.Statuses = perm.Level()
