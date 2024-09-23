@@ -1,4 +1,6 @@
-#!/bin/bash --noprofile --norc -e -o pipefail
+#!/bin/bash
+
+set -e
 
 # Usage: ./upload_artifact.sh <file_path> [artifact_name]
 
