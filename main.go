@@ -21,6 +21,10 @@ import (
 	"mvdan.cc/sh/shell"
 )
 
+const (
+	tmpDir = "./tmp/actions/call"
+)
+
 func New(
 	// Disable sending traces to Dagger Cloud
 	// +optional
@@ -222,6 +226,9 @@ func (m *Gha) WithPipeline(
 	// Permissions to grant the pipeline
 	// +optional
 	permissions Permissions,
+	// Upload dagger logs as an artifact for later inspection
+	// +optional
+	uploadLogs bool,
 	// Run the pipeline on any issue comment activity
 	// +optional
 	onIssueComment bool,
@@ -309,6 +316,7 @@ func (m *Gha) WithPipeline(
 		Secrets:        secrets,
 		SparseCheckout: sparseCheckout,
 		LFS:            lfs,
+		UploadLogs:     uploadLogs,
 		Settings:       m.Settings,
 	}
 	if !noDispatch {
@@ -523,7 +531,8 @@ type Pipeline struct {
 	// +private
 	SparseCheckout []string
 	// +private
-	LFS bool
+	LFS        bool
+	UploadLogs bool // +private
 	// +private
 	Settings Settings
 	// +private
@@ -608,6 +617,9 @@ func (p *Pipeline) asWorkflow() Workflow {
 	steps = append(steps, p.checkoutStep())
 	steps = append(steps, p.installDaggerSteps()...)
 	steps = append(steps, p.warmEngineStep(), p.callDaggerStep())
+	if p.UploadLogs {
+		steps = append(steps, p.uploadLogsSteps()...)
+	}
 	if p.Settings.StopEngine {
 		steps = append(steps, p.stopEngineStep())
 	}
@@ -677,32 +689,44 @@ func (p *Pipeline) warmEngineStep() JobStep {
 	return p.bashStep("warm-engine", nil)
 }
 
+// Return true if the configured Dagger version is a local source path (eg. dev engine)
+func (p *Pipeline) DevDagger() bool {
+	v := p.Settings.DaggerVersion
+	if v == "latest" {
+		return false
+	}
+	if semver.IsValid(v) {
+		return false
+	}
+	return true
+}
+
 func (p *Pipeline) installDaggerSteps() []JobStep {
-	if v := p.Settings.DaggerVersion; (v == "latest") || (semver.IsValid(v)) {
+	if p.DevDagger() {
+		// Interpret dagger version as a local source, and build it (dev engine)
 		return []JobStep{
-			p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": v}),
+			// Install latest dagger to bootstrap dev dagger
+			// FIXME: let's daggerize this, using dagger in dagger :)
+			p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": "latest"}),
+			JobStep{
+				Name: "Install go",
+				Uses: "actions/setup-go@v5",
+				With: map[string]string{
+					"go-version":            "1.22",
+					"cache-dependency-path": "dev/go.sum",
+				},
+			},
+			p.bashStep("start-dev-dagger", map[string]string{
+				"DAGGER_SOURCE": p.Settings.DaggerVersion,
+				// create separate outputs and containers for each job run (to prevent
+				// collisions with shared docker containers).
+				"_EXPERIMENTAL_DAGGER_DEV_OUTPUT":    "./bin/dev-${{ github.run_id }}",
+				"_EXPERIMENTAL_DAGGER_DEV_CONTAINER": "dagger-engine.dev-${{ github.run_id }}",
+			}),
 		}
 	}
-	// Interpret dagger version as a local source, and build it (dev engine)
 	return []JobStep{
-		// Install latest dagger to bootstrap dev dagger
-		// FIXME: let's daggerize this, using dagger in dagger :)
-		p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": "latest"}),
-		JobStep{
-			Name: "Install go",
-			Uses: "actions/setup-go@v5",
-			With: map[string]string{
-				"go-version":            "1.22",
-				"cache-dependency-path": "dev/go.sum",
-			},
-		},
-		p.bashStep("start-dev-dagger", map[string]string{
-			"DAGGER_SOURCE": p.Settings.DaggerVersion,
-			// create separate outputs and containers for each job run (to prevent
-			// collisions with shared docker containers).
-			"_EXPERIMENTAL_DAGGER_DEV_OUTPUT":    "./bin/dev-${{ github.run_id }}",
-			"_EXPERIMENTAL_DAGGER_DEV_CONTAINER": "dagger-engine.dev-${{ github.run_id }}di",
-		}),
+		p.bashStep("install-dagger", map[string]string{"DAGGER_VERSION": p.Settings.DaggerVersion}),
 	}
 }
 
@@ -737,6 +761,8 @@ func (p *Pipeline) callDaggerStep() JobStep {
 	}
 	// Inject dagger command
 	env["COMMAND"] = "dagger call -q " + p.Command
+	// Convention inherited from github.com/dagger/dagger/.github/actions/call/action.yml
+	env["GITHUB_TMP"] = tmpDir
 	// Inject user-defined secrets
 	for _, secretName := range p.Secrets {
 		env[secretName] = fmt.Sprintf("${{ secrets.%s }}", secretName)
@@ -796,4 +822,31 @@ func (p *Pipeline) bashStep(id string, env map[string]string) JobStep {
 		Run:   script,
 		Env:   env,
 	}
+}
+
+func (p *Pipeline) uploadLogsSteps() []JobStep {
+	var steps []JobStep
+	if p.DevDagger() {
+		steps = append(
+			steps,
+			p.bashStep("dump-engine-logs", map[string]string{"GITHUB_TMP": tmpDir}),
+			JobStep{
+				Name: "Upload engine logs",
+				Uses: "actions/upload-artifact@v3",
+				With: map[string]string{
+					"name": "engine-logs-{{ github.run_id }}",
+					"path": tmpDir + "/engine-*.log",
+				},
+			},
+		)
+	}
+	steps = append(steps, JobStep{
+		Name: "Upload call logs",
+		Uses: "actions/upload-artifact@v3",
+		With: map[string]string{
+			"name": "call-logs-{{ github.run_id }}",
+			"path": tmpDir + "/stderr.txt",
+		},
+	})
+	return steps
 }

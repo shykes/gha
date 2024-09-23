@@ -25,7 +25,11 @@ if [ -z "$COMMAND" ]; then
   exit 1
 fi
 
-tmp=$(mktemp -d)
+if [ -z "$GITHUB_TMP" ]; then
+    tmp=$(mktemp -d)
+else
+    tmp="$(mkdir -p ${GITHUB_TMP})"
+fi
 (
     cd $tmp
 

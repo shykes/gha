@@ -81,7 +81,11 @@ jobs:
                   exit 1
                 fi
 
-                tmp=$(mktemp -d)
+                if [ -z "$GITHUB_TMP" ]; then
+                    tmp=$(mktemp -d)
+                else
+                    tmp="$(mkdir -p ${GITHUB_TMP})"
+                fi
                 (
                     cd $tmp
 
@@ -189,6 +193,7 @@ jobs:
                 COMMAND: dagger call -q deploy-docs --token $NETLIFY_TOKEN --docker-config $DOCKER_CONFIG
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DOCKER_CONFIG: ${{ secrets.DOCKER_CONFIG }}
+                GITHUB_TMP: ./tmp/actions/call
                 NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
               shell: bash
         outputs:

@@ -47,14 +47,16 @@ func (m *Github) Generate(
 				OnPullRequest:  true,
 				OnPushBranches: []string{"main"},
 				OnPushTags:     []string{"*"},
+				UploadLogs:     true,
 			},
 		).
 		WithPipeline(
 			"Demo pipeline 3",
 			"directory with-directory --path=. --directory=. glob --pattern=*",
 			dagger.GhaWithPipelineOpts{
-				Module:   "github.com/shykes/core",
-				Dispatch: true,
+				Module:     "github.com/shykes/core",
+				Dispatch:   true,
+				UploadLogs: true,
 			}).
 		WithPipeline(
 			"Schedule pipeline",
