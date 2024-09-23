@@ -18,14 +18,9 @@ if [ ! -f "$FILE_PATH" ]; then
 fi
 
 # Required environment variables provided by GitHub Actions
-ACTIONS_RUNTIME_URL=${ACTIONS_RUNTIME_URL}
-ACTIONS_RUNTIME_TOKEN=${ACTIONS_RUNTIME_TOKEN}
-RUN_ID=${GITHUB_RUN_ID}
-
-if [ -z "$ACTIONS_RUNTIME_URL" ] || [ -z "$ACTIONS_RUNTIME_TOKEN" ] || [ -z "$RUN_ID" ]; then
-  echo "This script must be run within a GitHub Actions runner."
-  exit 1
-fi
+ACTIONS_RUNTIME_URL=${ACTIONS_RUNTIME_URL:?ACTIONS_RUNTIME_URL not set}
+ACTIONS_RUNTIME_TOKEN=${ACTIONS_RUNTIME_TOKEN:?ACTIONS_RUNTIME_TOKEN not set}
+RUN_ID=${GITHUB_RUN_ID:?GITHUB_RUN_ID not set}
 
 echo "Uploading '$FILE_PATH' as artifact '$ARTIFACT_NAME'..."
 
