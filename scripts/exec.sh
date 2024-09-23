@@ -119,7 +119,7 @@ cat <<'.'
 ```
 .
 
-cat $tmp/stderr.txt
+tail -n 1000 $tmp/stderr.txt
 
 cat <<'.'
 ```
