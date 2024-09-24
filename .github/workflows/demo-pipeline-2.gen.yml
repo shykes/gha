@@ -90,7 +90,11 @@ jobs:
                   exit 1
                 fi
 
-                tmp=$(mktemp -d)
+                if [ -z "$GITHUB_TMP" ]; then
+                    tmp=$(mktemp -d)
+                else
+                    tmp="$(mkdir -p ${GITHUB_TMP})"
+                fi
                 (
                     cd $tmp
 
@@ -198,7 +202,13 @@ jobs:
                 COMMAND: dagger call -q directory with-directory --path=. --directory=. glob --pattern=*
                 DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
                 DAGGER_MODULE: github.com/shykes/core
+                GITHUB_TMP: ./tmp/actions/call
               shell: bash
+            - name: Upload call logs
+              uses: actions/upload-artifact@v3
+              with:
+                name: call-logs-{{ github.run_id }}
+                path: ./tmp/actions/call/stderr.txt
         outputs:
             stderr: ${{ steps.exec.outputs.stderr }}
             stdout: ${{ steps.exec.outputs.stdout }}
