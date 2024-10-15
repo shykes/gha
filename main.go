@@ -43,8 +43,7 @@ func New(
 	// Configure a default runner for all workflows
 	// See https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/using-self-hosted-runners-in-a-workflow
 	// +optional
-	// +default="ubuntu-latest"
-	runner string,
+	runner []string,
 	// File extension to use for generated workflow files
 	// +optional
 	// +default=".gen.yml"
@@ -57,6 +56,10 @@ func New(
 	// +optional
 	timeoutMinutes int,
 ) *Gha {
+	if runner == nil {
+		runner = []string{"ubuntu-latest"}
+	}
+
 	return &Gha{Settings: Settings{
 		PublicToken:    publicToken,
 		NoTraces:       noTraces,
@@ -83,7 +86,7 @@ type Settings struct {
 	NoTraces               bool
 	StopEngine             bool
 	AsJson                 bool
-	Runner                 string
+	Runner                 []string
 	PullRequestConcurrency string
 	Debug                  bool
 	FileExtension          string
@@ -189,8 +192,9 @@ func (m *Gha) WithPipeline(
 	// +optional
 	module string,
 	// Dispatch jobs to the given runner
+	// Example: ["ubuntu-latest"]
 	// +optional
-	runner string,
+	runner []string,
 	// Github secrets to inject into the pipeline environment.
 	// For each secret, an env variable with the same name is created.
 	// Example: ["PROD_DEPLOY_TOKEN", "PRIVATE_SSH_KEY"]
@@ -318,7 +322,6 @@ func (m *Gha) WithPipeline(
 		p.Settings.PullRequestConcurrency = pullRequestConcurrency
 	}
 	if permissions != nil {
-		fmt.Printf("permissions: %v\n", permissions)
 		p.Settings.Permissions = permissions
 	}
 	if debug {
@@ -327,7 +330,7 @@ func (m *Gha) WithPipeline(
 	if daggerVersion != "" {
 		p.Settings.DaggerVersion = daggerVersion
 	}
-	if runner != "" {
+	if runner != nil {
 		p.Settings.Runner = runner
 	}
 	if timeoutMinutes != 0 {

@@ -45,7 +45,7 @@ func (w Workflow) Config(
 
 type WorkflowConcurrency struct {
 	Group            string `json:"group,omitempty" yaml:"group,omitempty"`
-	CancelInProgress bool   `json:"group,cancel-in-progress" yaml:"cancel-in-progress,omitempty"`
+	CancelInProgress bool   `json:"cancel-in-progress,omitempty" yaml:"cancel-in-progress,omitempty"`
 }
 
 type WorkflowTriggers struct {
@@ -88,7 +88,7 @@ type DispatchInput struct {
 }
 
 type Job struct {
-	RunsOn         string            `json:"runs-on" yaml:"runs-on"`
+	RunsOn         []string          `json:"runs-on" yaml:"runs-on"`
 	Permissions    *JobPermissions   `json:"permissions,omitempty" yaml:"permissions,omitempty"`
 	Name           string            `json:"name" yaml:"name"`
 	Needs          []string          `json:"needs,omitempty" yaml:"needs,omitempty"`
