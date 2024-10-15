@@ -8,7 +8,7 @@ type Github struct{}
 
 // Generate our CI config
 // Export to .github at the repository root
-// Example: 'dagger call -m .github -o .github'
+// Example: 'dagger call --mod .github generate export --path .github'
 func (m *Github) Generate(
 	// +optional
 	// +defaultPath="/"
